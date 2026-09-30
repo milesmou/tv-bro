@@ -7,9 +7,9 @@ android {
     namespace = "com.phlox.tvwebbrowser"
 
     defaultConfig {
-        applicationId = "com.phlox.tvwebbrowser"
-        versionCode = 69
-        versionName = "2.1.6"
+        applicationId = "com.milesmou.tvbrowser"
+        versionCode = 1
+        versionName = "1.0.0"
 
         javaCompileOptions {
             annotationProcessorOptions {
@@ -60,17 +60,13 @@ android {
     productFlavors {
         create("generic") {
             dimension = "appstore"
-            buildConfigField("Boolean", "BUILT_IN_AUTO_UPDATE", "true")
         }
         create("google") {
             dimension = "appstore"
-            //now auto-update violates Google Play policies
-            buildConfigField("Boolean", "BUILT_IN_AUTO_UPDATE", "false")
         }
         create("foss") {
             dimension = "appstore"
             applicationIdSuffix = ".foss"
-            buildConfigField("Boolean", "BUILT_IN_AUTO_UPDATE", "false")
         }
 
         create("geckoIncluded") {

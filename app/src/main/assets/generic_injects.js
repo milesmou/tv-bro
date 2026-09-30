@@ -27,11 +27,13 @@ if (!window.tvBroClicksListener) {
 }
 
 // video playback control support
+if (!Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'playing')) {
 Object.defineProperty(HTMLMediaElement.prototype, 'playing', {
     get: function(){
         return !!(this.currentTime > 0 && !this.paused && !this.ended && this.readyState > 2);
     }
 })
+}
 
 window.tvBroTogglePlayback = function() {
   var media = document.querySelector('video') || document.querySelector('audio');

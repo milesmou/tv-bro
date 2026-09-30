@@ -559,6 +559,21 @@ class CursorDrawerDelegate(val context: Context, val surface: View) {
         surface.postInvalidate()
     }
 
+    fun cancelNavigation() {
+        surface.removeCallbacks(longPressRunnable)
+        if (dpadCenterPressed) {
+            dispatchMotionEvent(cursorPosition.x, cursorPosition.y, MotionEvent.ACTION_CANCEL)
+        }
+        dpadCenterPressed = false
+        cursorDirection.set(0, 0)
+        cursorSpeed.set(0f, 0f)
+        grabMode = false
+        scrollHackStarted = false
+        surface.keyDispatcherState.reset(this)
+        lastCursorUpdate = System.currentTimeMillis() - CURSOR_DISAPPEAR_TIMEOUT
+        surface.postInvalidate()
+    }
+
     private val pinchZoomRunnable: Runnable by lazy {
         object : Runnable {
             override fun run() {

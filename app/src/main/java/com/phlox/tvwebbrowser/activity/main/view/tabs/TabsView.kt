@@ -40,9 +40,6 @@ class TabsView @JvmOverloads constructor(
     settingsModel = ActiveModelsRepository.get(SettingsModel::class, context)
     adapter.tabsModel = tabsModel
     vb.rvTabs.layoutManager = LinearLayoutManager(context, RecyclerView.HORIZONTAL, false)
-    vb.btnAdd.setOnClickListener{
-      listener?.onAddNewTabSelected()
-    }
   }
 
   override fun onAttachedToWindow() {

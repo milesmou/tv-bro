@@ -182,12 +182,14 @@ class WebViewWebEngine(val tab: WebTabState) : WebEngine, CursorDrawerDelegate.C
         parent.removeAllViews()
         parent.addView(webView)
         viewParent?.cursorDrawerDelegate?.callback = this
+        updateNavigationMode(webView?.url ?: tab.url)
         onResume()
     }
 
     override fun onDetachFromWindow(completely: Boolean, destroyTab: Boolean) {
         onPause()
         (webView?.parent as? ViewGroup)?.removeView(webView)
+        viewParent = null
         callback = null
         if (completely) {
             webView = null
@@ -226,11 +228,18 @@ class WebViewWebEngine(val tab: WebTabState) : WebEngine, CursorDrawerDelegate.C
     }
 
     override fun setVirtualCursorMode(enabled: Boolean) {
-        viewParent?.cursorEnabled = enabled
-        if (enabled) {
+        val useCursor = enabled && !Config.isAppPage(url ?: tab.url)
+        viewParent?.cursorEnabled = useCursor
+        if (useCursor) {
             viewParent?.cursorDrawerDelegate?.animateAppearing()
         }
-        webView?.setVirtualCursorMode(enabled)
+        webView?.setVirtualCursorMode(useCursor)
+    }
+
+    private fun updateNavigationMode(pageUrl: String?) {
+        val useCursor = !Config.isAppPage(pageUrl)
+        viewParent?.cursorEnabled = useCursor
+        webView?.setVirtualCursorMode(useCursor)
     }
 
     override fun getCursorDrawerDelegate(): CursorDrawerDelegate? {
@@ -298,6 +307,7 @@ class WebViewWebEngine(val tab: WebTabState) : WebEngine, CursorDrawerDelegate.C
         }
 
         override fun onPageStarted(url: String?) {
+            updateNavigationMode(url)
             callback?.onPageStarted(url)
         }
 

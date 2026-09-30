@@ -37,6 +37,7 @@ class MyNavigationDelegate(private val webEngine: GeckoWebEngine) : GeckoSession
     ) {
         Log.d(TAG, "onLocationChange: $url")
         locationURL = url
+        webEngine.updateNavigationMode(url)
         webEngine.tab.url = url ?: ""
     }
 

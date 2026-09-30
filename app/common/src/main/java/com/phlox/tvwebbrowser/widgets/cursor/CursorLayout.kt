@@ -22,6 +22,8 @@ class CursorLayout @JvmOverloads constructor(context: Context, attrs: AttributeS
     var cursorEnabled: Boolean
         get() = !willNotDraw()
         set(value) {
+            if (cursorEnabled == value) return
+            cursorDrawerDelegate.cancelNavigation()
             setWillNotDraw(!value)
         }
     lateinit var cursorDrawerDelegate: CursorDrawerDelegate

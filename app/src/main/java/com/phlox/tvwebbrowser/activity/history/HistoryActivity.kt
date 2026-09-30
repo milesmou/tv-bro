@@ -4,7 +4,6 @@ import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
 import android.view.Gravity
-import android.view.KeyEvent
 import android.view.View
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
@@ -18,8 +17,6 @@ import com.phlox.tvwebbrowser.R
 import com.phlox.tvwebbrowser.databinding.ActivityHistoryBinding
 import com.phlox.tvwebbrowser.singleton.AppDatabase
 import com.phlox.tvwebbrowser.utils.BaseAnimationListener
-import com.phlox.tvwebbrowser.utils.Utils
-import com.phlox.tvwebbrowser.utils.VoiceSearchHelper
 import com.phlox.tvwebbrowser.utils.activemodel.ActiveModelsRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -34,8 +31,6 @@ class HistoryActivity : AppCompatActivity(), AdapterView.OnItemClickListener, Ad
     private var ibDelete: ImageButton? = null
     private var adapter: HistoryAdapter? = null
     private lateinit var historyModel: HistoryModel
-    private val voiceSearchHelper = VoiceSearchHelper(this, VOICE_SEARCH_REQUEST_CODE,
-        VOICE_SEARCH_PERMISSIONS_REQUEST_CODE)
 
     internal var onListScrollListener: AbsListView.OnScrollListener = object : AbsListView.OnScrollListener {
         override fun onScrollStateChanged(view: AbsListView, scrollState: Int) {
@@ -94,43 +89,11 @@ class HistoryActivity : AppCompatActivity(), AdapterView.OnItemClickListener, Ad
                 .show()
     }
 
-    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        when (event.keyCode) {
-            KeyEvent.KEYCODE_SEARCH -> {
-                if (event.action == KeyEvent.ACTION_DOWN) {
-                    //nop
-                } else if (event.action == KeyEvent.ACTION_UP) {
-                    voiceSearchHelper.initiateVoiceSearch(object : VoiceSearchHelper.Callback {
-                        override fun onResult(text: String?) {
-                            if (text == null) {
-                                Utils.showToast(this@HistoryActivity, getString(R.string.can_not_recognize))
-                                return
-                            }
-                            adapter!!.erase()
-                            historyModel.searchQuery = text
-                            historyModel.loadItems(true)
-                        }
-                    })
-                }
-                return true
-            }
-        }
-        return super.dispatchKeyEvent(event)
-    }
 
-    @Deprecated("Deprecated in Java")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (!voiceSearchHelper.processActivityResult(requestCode, resultCode, data)) {
-            super.onActivityResult(requestCode, resultCode, data)
-        }
-    }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>,
-        grantResults: IntArray) {
-        if (!voiceSearchHelper.processPermissionsResult(requestCode, permissions, grantResults)) {
-            super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        }
-    }
+
+
+
 
     override fun onItemClick(parent: AdapterView<*>, view: View, position: Int, id: Long) {
         val hi = (view as HistoryItemView).historyItem
@@ -204,8 +167,6 @@ class HistoryActivity : AppCompatActivity(), AdapterView.OnItemClickListener, Ad
     }
 
     companion object {
-        private const val VOICE_SEARCH_REQUEST_CODE = 10001
-        private const val VOICE_SEARCH_PERMISSIONS_REQUEST_CODE = 10002
 
         const val KEY_URL = "url"
     }

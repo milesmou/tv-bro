@@ -20,6 +20,8 @@ class GeckoViewWithVirtualCursor @JvmOverloads constructor(context: Context, att
     GeckoViewEx(context, attrs) {
     var virtualCursorMode: Boolean = true
         set(value) {
+            if (field == value) return
+            if (::cursorDrawerDelegate.isInitialized) cursorDrawerDelegate.cancelNavigation()
             field = value
             dpadNavigationEventsAdapter.resetState()
         }
@@ -89,6 +91,6 @@ class GeckoViewWithVirtualCursor @JvmOverloads constructor(context: Context, att
             return
         }
 
-        cursorDrawerDelegate.dispatchDraw(canvas)
+        if (virtualCursorMode) cursorDrawerDelegate.dispatchDraw(canvas)
     }
 }

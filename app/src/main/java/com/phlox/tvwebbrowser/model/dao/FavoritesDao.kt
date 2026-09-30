@@ -17,6 +17,14 @@ interface FavoritesDao {
     @Update
     suspend fun update(item: FavoriteItem)
 
+    @Transaction
+    suspend fun saveHomePageOrder(items: List<FavoriteItem>) {
+        items.forEachIndexed { index, item ->
+            item.order = index
+            update(item)
+        }
+    }
+
     @Delete
     suspend fun delete(item: FavoriteItem)
 

@@ -7,6 +7,7 @@
     android:layout_height="match_parent"
     tools:context=".activity.main.MainActivity"
     android:fitsSystemWindows="true"
+    android:background="@drawable/browser_surface"
     tools:deviceIds="tv"
     android:clipChildren="false">
 
@@ -27,25 +28,176 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/rlActionBar"
-        android:background="@color/top_bar_background"
+        android:background="@drawable/browser_surface"
         android:elevation="5dp"
         android:clipChildren="false"
         android:clipToPadding="false">
 
-        <com.phlox.tvwebbrowser.activity.main.view.ActionBar
-            android:id="@+id/vActionBar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
 
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/llNavigationPanel"
+            android:layout_width="match_parent"
+            android:layout_height="68dp"
+            android:clipChildren="false"
+            android:paddingHorizontal="12dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:gravity="center">
+
+            <com.phlox.tvwebbrowser.activity.main.view.MenuCardButton
+                android:id="@+id/ibHome"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/browser_menu_row_height"
+                android:layout_marginHorizontal="4dp"
+                android:background="@drawable/button_bg_selector"
+                android:contentDescription="@string/navigate_home"
+                android:src="@drawable/ic_home_grey_900_24dp"
+                app:cardLabel="@string/menu_home"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/ibBack"
+                app:layout_constraintHorizontal_weight="1"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+            <com.phlox.tvwebbrowser.activity.main.view.MenuCardButton
+                android:id="@+id/ibBack"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/browser_menu_row_height"
+                android:layout_marginHorizontal="4dp"
+                android:background="@drawable/button_bg_selector"
+                android:contentDescription="@string/navigate_back"
+                android:src="@drawable/back_icon_selector"
+                app:cardLabel="@string/menu_back"
+                app:layout_constraintStart_toEndOf="@id/ibHome"
+                app:layout_constraintEnd_toStartOf="@id/ibForward"
+                app:layout_constraintHorizontal_weight="1"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+            <com.phlox.tvwebbrowser.activity.main.view.MenuCardButton
+                android:id="@+id/ibForward"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/browser_menu_row_height"
+                android:layout_marginHorizontal="4dp"
+                android:background="@drawable/button_bg_selector"
+                android:contentDescription="@string/navigate_forward"
+                android:src="@drawable/forward_icon_selector"
+                app:cardLabel="@string/menu_forward"
+                app:layout_constraintStart_toEndOf="@id/ibBack"
+                app:layout_constraintEnd_toStartOf="@id/ibRefresh"
+                app:layout_constraintHorizontal_weight="1"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+            <com.phlox.tvwebbrowser.activity.main.view.MenuCardButton
+                android:id="@+id/ibRefresh"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/browser_menu_row_height"
+                android:layout_marginHorizontal="4dp"
+                android:background="@drawable/button_bg_selector"
+                android:contentDescription="@string/refresh_page"
+                android:src="@drawable/ic_refresh_grey_900_24dp"
+                app:cardLabel="@string/menu_refresh"
+                app:layout_constraintStart_toEndOf="@id/ibForward"
+                app:layout_constraintEnd_toStartOf="@id/ibAdBlock"
+                app:layout_constraintHorizontal_weight="1"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+            <com.phlox.tvwebbrowser.activity.main.view.MenuCardButton
+                android:id="@+id/ibAdBlock"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/browser_menu_row_height"
+                android:layout_marginHorizontal="4dp"
+                android:background="@drawable/button_bg_selector"
+                android:contentDescription="@string/toggle_ads_blocking"
+                android:src="@drawable/ic_adblock_on"
+                app:cardLabel="@string/menu_ads"
+                app:layout_constraintStart_toEndOf="@id/ibRefresh"
+                app:layout_constraintEnd_toStartOf="@id/ibPopupBlock"
+                app:layout_constraintHorizontal_weight="1"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+            <com.phlox.tvwebbrowser.activity.main.view.MenuCardButton
+                android:id="@+id/ibPopupBlock"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/browser_menu_row_height"
+                android:layout_marginHorizontal="4dp"
+                android:background="@drawable/button_bg_selector"
+                android:contentDescription="@string/block_popups"
+                android:src="@drawable/ic_block_popups"
+                app:cardLabel="@string/menu_popups"
+                app:layout_constraintStart_toEndOf="@id/ibAdBlock"
+                app:layout_constraintEnd_toStartOf="@id/ibCloseTab"
+                app:layout_constraintHorizontal_weight="1"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+            <com.phlox.tvwebbrowser.activity.main.view.MenuCardButton
+                android:id="@+id/ibCloseTab"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/browser_menu_row_height"
+                android:layout_marginHorizontal="4dp"
+                android:background="@drawable/button_bg_selector"
+                android:contentDescription="@string/close_tab"
+                android:src="@drawable/ic_close_grey_900_24dp"
+                app:cardLabel="@string/menu_close"
+                app:layout_constraintStart_toEndOf="@id/ibPopupBlock"
+                app:layout_constraintEnd_toStartOf="@id/ibAddTab"
+                app:layout_constraintHorizontal_weight="1"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+            <com.phlox.tvwebbrowser.activity.main.view.MenuCardButton
+                android:id="@+id/ibAddTab"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/browser_menu_row_height"
+                android:layout_marginHorizontal="4dp"
+                android:background="@drawable/button_bg_selector"
+                android:contentDescription="@string/open_new_tab"
+                android:src="@drawable/ic_add_tab"
+                app:cardLabel="@string/menu_new_tab"
+                app:layout_constraintStart_toEndOf="@id/ibCloseTab"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_weight="1"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+            <TextView
+                android:id="@+id/tvBlockedAdCounter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="20dp"
+                android:textSize="12sp"
+                app:layout_constraintTop_toTopOf="@+id/ibAdBlock"
+                app:layout_constraintBottom_toTopOf="@+id/ibAdBlock"
+                app:layout_constraintStart_toEndOf="@+id/ibAdBlock"
+                app:layout_constraintEnd_toEndOf="@+id/ibAdBlock"
+                android:background="@drawable/gray_badge_bg"
+                android:gravity="center"
+                android:visibility="gone"
+                tools:visibility="visible"
+                tools:text="1" />
+
+            <TextView
+                android:id="@+id/tvBlockedPopupCounter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="20dp"
+                android:textSize="12sp"
+                app:layout_constraintTop_toTopOf="@+id/ibPopupBlock"
+                app:layout_constraintBottom_toTopOf="@+id/ibPopupBlock"
+                app:layout_constraintStart_toEndOf="@+id/ibPopupBlock"
+                app:layout_constraintEnd_toEndOf="@+id/ibPopupBlock"
+                android:background="@drawable/gray_badge_bg"
+                android:gravity="center"
+                android:visibility="gone"
+                tools:visibility="visible"
+                tools:text="1" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
         <com.phlox.tvwebbrowser.activity.main.view.tabs.TabsView
             android:id="@+id/vTabs"
             android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:layout_below="@+id/vActionBar"
-            android:layout_marginTop="10dp"
+            android:layout_height="@dimen/browser_menu_row_height"
+            android:layout_below="@id/llNavigationPanel"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginBottom="8dp"
             android:focusable="true"
-            android:nextFocusUp="@+id/ibMenu"
-            android:nextFocusDown="@+id/ibCloseTab"
+            android:nextFocusUp="@+id/ibHome"
             />
     </RelativeLayout>
 
@@ -79,148 +231,8 @@
             android:text="@string/open_a_new_tab_here" />
     </LinearLayout>
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/llBottomPanel"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:layout_alignParentBottom="true"
-        android:clipChildren="false"
-        android:gravity="center">
 
-        <ImageButton
-            android:id="@+id/ibCloseTab"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/button_bg_selector"
-            android:contentDescription="@string/close_tab"
-            android:src="@drawable/ic_close_grey_900_24dp"
-            android:layout_margin="3dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/ibBack"
-            app:layout_constraintHorizontal_chainStyle="packed"
-            app:layout_constraintStart_toStartOf="parent" />
 
-        <ImageButton
-            android:id="@+id/ibBack"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/button_bg_selector"
-            android:contentDescription="@string/navigate_back"
-            android:src="@drawable/back_icon_selector"
-            android:layout_margin="3dp"
-            app:layout_constraintEnd_toStartOf="@+id/ibForward"
-            app:layout_constraintHorizontal_chainStyle="packed"
-            app:layout_constraintStart_toEndOf="@+id/ibCloseTab"
-            app:layout_constraintBottom_toBottomOf="parent"/>
-
-        <ImageButton
-            android:id="@+id/ibForward"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/button_bg_selector"
-            android:contentDescription="@string/navigate_forward"
-            android:src="@drawable/forward_icon_selector"
-            android:layout_marginTop="3dp"
-            android:layout_marginBottom="3dp"
-            android:layout_marginEnd="3dp"
-            app:layout_constraintEnd_toStartOf="@+id/ibRefresh"
-            app:layout_constraintHorizontal_chainStyle="packed"
-            app:layout_constraintStart_toEndOf="@+id/ibBack"
-            app:layout_constraintBottom_toBottomOf="parent"/>
-
-        <ImageButton
-            android:id="@+id/ibRefresh"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/button_bg_selector"
-            android:contentDescription="@string/refresh_page"
-            android:src="@drawable/ic_refresh_grey_900_24dp"
-            android:layout_marginTop="3dp"
-            android:layout_marginBottom="3dp"
-            android:layout_marginEnd="3dp"
-            app:layout_constraintEnd_toStartOf="@+id/ibAdBlock"
-            app:layout_constraintHorizontal_chainStyle="packed"
-            app:layout_constraintStart_toEndOf="@+id/ibForward"
-            app:layout_constraintBottom_toBottomOf="parent"/>
-
-        <ImageButton
-            android:id="@+id/ibAdBlock"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/button_bg_selector"
-            android:contentDescription="@string/toggle_ads_blocking"
-            android:src="@drawable/ic_adblock_on"
-            android:layout_marginTop="3dp"
-            android:layout_marginBottom="3dp"
-            android:layout_marginEnd="3dp"
-            app:layout_constraintEnd_toStartOf="@+id/ibPopupBlock"
-            app:layout_constraintHorizontal_chainStyle="packed"
-            app:layout_constraintStart_toEndOf="@+id/ibRefresh"
-            app:layout_constraintBottom_toBottomOf="parent"/>
-
-        <ImageButton
-            android:id="@+id/ibPopupBlock"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/button_bg_selector"
-            android:contentDescription="@string/block_popups"
-            android:src="@drawable/ic_block_popups"
-            android:layout_marginTop="3dp"
-            android:layout_marginBottom="3dp"
-            android:layout_marginEnd="3dp"
-            app:layout_constraintEnd_toStartOf="@+id/ibHome"
-            app:layout_constraintHorizontal_chainStyle="packed"
-            app:layout_constraintStart_toEndOf="@+id/ibAdBlock"
-            app:layout_constraintBottom_toBottomOf="parent"/>
-
-        <ImageButton
-            android:id="@+id/ibHome"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/button_bg_selector"
-            android:contentDescription="@string/navigate_home"
-            android:src="@drawable/ic_home_grey_900_24dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="3dp"
-            android:layout_marginBottom="3dp"
-            android:layout_marginEnd="3dp"
-            app:layout_constraintHorizontal_chainStyle="packed"
-            app:layout_constraintStart_toEndOf="@+id/ibPopupBlock"
-            app:layout_constraintBottom_toBottomOf="parent"/>
-
-        <TextView
-            android:id="@+id/tvBlockedAdCounter"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:minWidth="20dp"
-            android:textSize="12sp"
-            app:layout_constraintTop_toTopOf="@+id/ibAdBlock"
-            app:layout_constraintBottom_toTopOf="@+id/ibAdBlock"
-            app:layout_constraintStart_toEndOf="@+id/ibAdBlock"
-            app:layout_constraintEnd_toEndOf="@+id/ibAdBlock"
-            android:background="@drawable/gray_badge_bg"
-            android:gravity="center"
-            android:visibility="gone"
-            tools:visibility="visible"
-            tools:text="1" />
-
-        <TextView
-            android:id="@+id/tvBlockedPopupCounter"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:minWidth="20dp"
-            android:textSize="12sp"
-            app:layout_constraintTop_toTopOf="@+id/ibPopupBlock"
-            app:layout_constraintBottom_toTopOf="@+id/ibPopupBlock"
-            app:layout_constraintStart_toEndOf="@+id/ibPopupBlock"
-            app:layout_constraintEnd_toEndOf="@+id/ibPopupBlock"
-            android:background="@drawable/gray_badge_bg"
-            android:gravity="center"
-            android:visibility="gone"
-            tools:visibility="visible"
-            tools:text="1" />
-    </androidx.constraintlayout.widget.ConstraintLayout>
-    
     <com.phlox.tvwebbrowser.activity.main.view.CursorMenuView
         android:id="@+id/vCursorMenu"
         android:layout_width="match_parent"

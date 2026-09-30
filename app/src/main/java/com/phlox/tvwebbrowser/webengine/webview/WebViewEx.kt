@@ -10,6 +10,7 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Color
 import android.media.MediaDrm
 import android.net.Uri
 import android.net.http.SslError
@@ -21,6 +22,7 @@ import android.os.Message
 import android.text.TextUtils
 import android.util.Log
 import android.view.MotionEvent
+import android.view.KeyEvent
 import android.view.View
 import android.webkit.ConsoleMessage
 import android.webkit.GeolocationPermissions
@@ -83,6 +85,23 @@ open class WebViewEx(context: Context, val callback: Callback, val jsInterface: 
     var currentOriginalUrl: Uri? = null
     private val uiHandler = Handler(Looper.getMainLooper())
     private val config = AppContext.provideConfig()
+    private var fitPageToScreenOnLoad = false
+    private var homeConfirmHeld = false
+    private var homeConfirmLongPressed = false
+    private val homeLongPress = Runnable {
+        if (homeConfirmHeld && url == Config.HOME_PAGE_URL) {
+            homeConfirmLongPressed = true
+            evaluateJavascript("window.tvBroHandleRemoteKey && tvBroHandleRemoteKey('LongEnter')", null)
+        }
+    }
+
+    override fun onWindowFocusChanged(hasWindowFocus: Boolean) {
+        super.onWindowFocusChanged(hasWindowFocus)
+        if (!hasWindowFocus) {
+            uiHandler.removeCallbacks(homeLongPress)
+            homeConfirmHeld = false
+        }
+    }
 
     interface Callback {
         fun getActivity(): Activity?
@@ -117,6 +136,7 @@ open class WebViewEx(context: Context, val callback: Callback, val jsInterface: 
     }
 
     init {
+        setBackgroundColor(Color.TRANSPARENT)
         with(settings) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 safeBrowsingEnabled = callback.isAdBlockingEnabled()
@@ -402,8 +422,12 @@ open class WebViewEx(context: Context, val callback: Callback, val jsInterface: 
 
             override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
                 super.onPageStarted(view, url, favicon)
+                uiHandler.removeCallbacks(homeLongPress)
+                homeConfirmHeld = false
+                view.setBackgroundColor(if (url == Config.HOME_PAGE_URL) Color.TRANSPARENT else Color.WHITE)
                 Log.d(TAG, "onPageStarted url: $url")
                 currentOriginalUrl = url.toUri()
+                fitPageToScreenOnLoad = !Config.isAppPage(url)
                 callback.onPageStarted(url)
             }
 
@@ -412,6 +436,19 @@ open class WebViewEx(context: Context, val callback: Callback, val jsInterface: 
                 Log.d(TAG, "onPageFinished url: $url")
                 callback.onPageFinished(url)
                 evaluateJavascript(getGenericJSInjects(), null)
+                if (fitPageToScreenOnLoad && url == currentOriginalUrl?.toString()) {
+                    fitPageToScreenOnLoad = false
+                    view.evaluateJavascript("document.documentElement.clientWidth || window.innerWidth") { cssWidthResult ->
+                        if (view.url != url || Config.isAppPage(view.url)) return@evaluateJavascript
+                        val cssWidth = cssWidthResult.toFloatOrNull() ?: return@evaluateJavascript
+                        if (cssWidth <= 0 || view.width <= 0) return@evaluateJavascript
+                        val currentScale = view.scale
+                        val fitScale = view.width / cssWidth
+                        if (currentScale > fitScale * 1.01f) {
+                            view.zoomBy(fitScale / currentScale)
+                        }
+                    }
+                }
             }
 
             override fun onLoadResource(view: WebView, url: String) {
@@ -497,6 +534,10 @@ open class WebViewEx(context: Context, val callback: Callback, val jsInterface: 
     override fun restoreState(inState: Bundle): WebBackForwardList? {
         val result = super.restoreState(inState)
         currentOriginalUrl = url?.toUri()
+        if (url == Config.HOME_PAGE_URL) {
+            // Reload packaged home content after restoring a tab across app updates.
+            loadUrl(Config.HOME_PAGE_URL)
+        }
         return result
     }
 
@@ -563,7 +604,8 @@ open class WebViewEx(context: Context, val callback: Callback, val jsInterface: 
         var injects = genericInjects
         if (injects == null) {
             injects =
-                context.assets.open("generic_injects.js").bufferedReader().use { it.readText() }
+                context.assets.open("generic_injects.js").bufferedReader().use { it.readText() } +
+                    "\n" + context.assets.open("video_controls.js").bufferedReader().use { it.readText() }
             genericInjects = injects
         }
         return injects
@@ -643,6 +685,45 @@ open class WebViewEx(context: Context, val callback: Callback, val jsInterface: 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             settings.safeBrowsingEnabled = adblockEnabled
         }
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (url == Config.HOME_PAGE_URL) {
+            val key = when (event.keyCode) {
+                KeyEvent.KEYCODE_DPAD_LEFT -> "ArrowLeft"
+                KeyEvent.KEYCODE_DPAD_RIGHT -> "ArrowRight"
+                KeyEvent.KEYCODE_DPAD_UP -> "ArrowUp"
+                KeyEvent.KEYCODE_DPAD_DOWN -> "ArrowDown"
+                KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER,
+                KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_BUTTON_A -> "Enter"
+                else -> null
+            }
+            if (key != null) {
+                if (key == "Enter") {
+                    if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+                        homeConfirmHeld = true
+                        homeConfirmLongPressed = false
+                        uiHandler.postDelayed(homeLongPress, 600)
+                    } else if (event.action == KeyEvent.ACTION_DOWN && event.isLongPress &&
+                        homeConfirmHeld && !homeConfirmLongPressed) {
+                        uiHandler.removeCallbacks(homeLongPress)
+                        homeLongPress.run()
+                    } else if (event.action == KeyEvent.ACTION_UP) {
+                        uiHandler.removeCallbacks(homeLongPress)
+                        if (homeConfirmHeld && !homeConfirmLongPressed && !event.isCanceled) {
+                            evaluateJavascript("window.tvBroHandleRemoteKey && tvBroHandleRemoteKey('Enter')", null)
+                        }
+                        homeConfirmHeld = false
+                    }
+                } else if (event.action == KeyEvent.ACTION_DOWN) {
+                    uiHandler.removeCallbacks(homeLongPress)
+                    homeConfirmHeld = false
+                    evaluateJavascript("window.tvBroHandleRemoteKey && tvBroHandleRemoteKey('$key')", null)
+                }
+                return true
+            }
+        }
+        return super.dispatchKeyEvent(event)
     }
 
     fun setVirtualCursorMode(enabled: Boolean) {

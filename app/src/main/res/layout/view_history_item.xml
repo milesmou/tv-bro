@@ -17,7 +17,6 @@
         android:visibility="gone"/>
 
     <TextView
-        android:text="TextView"
         android:layout_width="150dp"
         android:layout_height="wrap_content"
         android:textSize="20sp"
@@ -31,7 +30,6 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
         <TextView
-            android:text="TextView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textSize="30sp"
@@ -40,7 +38,6 @@
             android:id="@+id/tvTitle" />
 
         <TextView
-            android:text="TextView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textSize="18sp"

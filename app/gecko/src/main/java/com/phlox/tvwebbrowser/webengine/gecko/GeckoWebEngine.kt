@@ -450,8 +450,10 @@ class GeckoWebEngine(val tab: WebTabState): WebEngine,
             previousSession.setActive(false)
             webView.releaseSession()
         }
-        webView.coverUntilFirstPaint(Color.WHITE)
+        val homePage = tab.url == Config.HOME_URL_ALIAS || tab.url == Config.HOME_PAGE_URL
+        webView.coverUntilFirstPaint(if (homePage) Color.rgb(23, 28, 44) else Color.WHITE)
         webView.setSession(session)
+        updateNavigationMode(tab.url)
         if (session.isOpen && previousSession != null && previousSession != session) {
             Log.d(TAG, "Activating session")
             session.setActive(true)
@@ -508,10 +510,15 @@ class GeckoWebEngine(val tab: WebTabState): WebEngine,
     }
 
     override fun setVirtualCursorMode(enabled: Boolean) {
-        if (enabled) {
+        val useCursor = enabled && !Config.isAppPage(url ?: tab.url)
+        if (useCursor) {
             webView?.cursorDrawerDelegate?.animateAppearing()
         }
-        webView?.virtualCursorMode = enabled
+        webView?.virtualCursorMode = useCursor
+    }
+
+    fun updateNavigationMode(pageUrl: String?) {
+        webView?.virtualCursorMode = !Config.isAppPage(pageUrl)
     }
 
     override fun getCursorDrawerDelegate(): CursorDrawerDelegate? {

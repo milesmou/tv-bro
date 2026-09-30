@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.TVBro" parent="Theme.TVBroBase">
+        <item name="android:windowSplashScreenBackground">@color/day_night_background_color</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/browser_launcher_foreground</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/day_night_background_color</item>
+    </style>
+</resources>

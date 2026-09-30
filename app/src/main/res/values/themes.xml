@@ -1,6 +1,15 @@
 <resources>
 
     <style name="Theme.TVBroBase" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="colorAccent">#6377F5</item>
+        <item name="android:colorBackground">@color/day_night_background_color</item>
+        <item name="android:windowBackground">@drawable/browser_surface</item>
+        <item name="android:textColorPrimary">@color/day_night_text_color_contrast</item>
+        <item name="android:textViewStyle">@style/BrowserText</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:textColorSecondary">@color/day_night_text_color</item>
+        <item name="android:textColorHint">#919BB9</item>
+        <item name="colorControlNormal">@color/day_night_icon_color</item>
         <item name="android:windowEnterTransition">@android:transition/fade</item>
         <item name="android:windowExitTransition">@android:transition/fade</item>
         <item name="android:windowSharedElementExitTransition">@android:transition/move</item>
@@ -15,10 +24,26 @@
     </style>
 
     <style name="SettingsDialog">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowBackground">@drawable/browser_surface</item>
+        <item name="android:windowNoTitle">true</item>
         <item name="android:windowFrame">@null</item>
         <item name="android:windowIsFloating">true</item>
         <item name="android:windowContentOverlay">@null</item>
         <item name="android:windowAnimationStyle">@android:style/Animation.Dialog</item>
         <item name="android:windowSoftInputMode">stateUnspecified|adjustPan</item>
+    </style>
+
+    <style name="BrowserText" parent="@android:style/Widget.TextView">
+        <item name="android:textColor">@color/day_night_text_color</item>
+    </style>
+
+    <style name="BookmarksDialog" parent="Theme.TVBroBase">
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowBackground">@drawable/bookmark_panel_background</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:backgroundDimAmount">0.55</item>
+        <item name="android:windowSoftInputMode">stateUnspecified|adjustResize</item>
     </style>
 </resources>

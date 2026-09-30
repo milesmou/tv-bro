@@ -5,6 +5,9 @@ import android.content.Context
 import android.content.DialogInterface
 import android.os.Bundle
 import android.view.View
+import android.view.KeyEvent
+import android.view.Gravity
+import android.widget.LinearLayout
 import android.view.WindowManager
 import com.fedir.segmentedbutton.SegmentedButton
 import com.phlox.tvwebbrowser.R
@@ -22,7 +25,6 @@ class SettingsDialog(context: Context, val model: SettingsModel) :
         setContentView(R.layout.dialog_settings)
 
         sbTabs = findViewById(R.id.sbTabs)
-
         val tabContentAdapter = object : SegmentedButtonTabsAdapter(sbTabs, findViewById(R.id.flTabsContent)) {
             override fun createContentViewForSegmentButtonId(id: Int): View {
                 return when (id) {
@@ -40,6 +42,41 @@ class SettingsDialog(context: Context, val model: SettingsModel) :
             }
         }
 
+        val tabs = listOf<View>(findViewById(R.id.btnMainTab),
+            findViewById(R.id.btnShortcutsTab), findViewById(R.id.btnVersionTab))
+        tabs.forEachIndexed { index, tab ->
+            tab.isFocusableInTouchMode = true
+            tab.onFocusChangeListener = View.OnFocusChangeListener { view, hasFocus ->
+                if (hasFocus && sbTabs.checkedId != view.id) {
+                    view.performClick()
+                    view.requestFocus()
+                }
+            }
+            tab.setOnKeyListener { _, keyCode, event ->
+                when (keyCode) {
+                    KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                        if (event.action == KeyEvent.ACTION_UP) {
+                            val step = if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) 1 else -1
+                            tabs[(index + step).coerceIn(0, tabs.lastIndex)].requestFocus()
+                        }
+                        true
+                    }
+                    KeyEvent.KEYCODE_DPAD_DOWN -> {
+                        if (event.action == KeyEvent.ACTION_UP) {
+                            when (tab.id) {
+                                R.id.btnMainTab -> mainView?.focusFirstOption()
+                                R.id.btnVersionTab -> findViewById<View>(R.id.tvLink)?.requestFocus()
+                                else -> tabContentAdapter.currentContentView?.requestFocus()
+                            }
+                        }
+                        true
+                    }
+                    KeyEvent.KEYCODE_DPAD_UP -> true
+                    else -> false
+                }
+            }
+        }
+
         setOnDismissListener(this)
     }
 
@@ -48,10 +85,26 @@ class SettingsDialog(context: Context, val model: SettingsModel) :
         window?.setLayout(
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT)
+        val panelWidth = (context.resources.displayMetrics.widthPixels * 0.60f).toInt()
+        for (panel in listOf<View>(sbTabs, findViewById(R.id.flTabsContent))) {
+            panel.layoutParams = (panel.layoutParams as LinearLayout.LayoutParams).apply {
+                width = panelWidth
+                gravity = Gravity.CENTER_HORIZONTAL
+            }
+        }
     }
 
     override fun onDismiss(dialog: DialogInterface?) {
         mainView?.save()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        val firstTab = findViewById<View>(R.id.btnMainTab)
+        firstTab.requestFocus()
+        firstTab.post {
+            if (isShowing) firstTab.requestFocus()
+        }
     }
 
     override fun onNeedToCloseSettings() {

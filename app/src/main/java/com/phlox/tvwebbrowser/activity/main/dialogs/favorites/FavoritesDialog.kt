@@ -15,7 +15,7 @@ import java.util.*
 /**
  * Created by PDT on 09.09.2016.
  */
-class FavoritesDialog(context: Context, val scope: CoroutineScope, private val callback: Callback, private val currentPageTitle: String?, private val currentPageUrl: String?) : Dialog(context), FavoriteItemView.Listener {
+class FavoritesDialog(context: Context, val scope: CoroutineScope, private val callback: Callback, private val currentPageTitle: String?, private val currentPageUrl: String?) : Dialog(context, R.style.BookmarksDialog), FavoriteItemView.Listener {
     private var items: MutableList<FavoriteItem> = ArrayList()
     private val adapter = FavoritesListAdapter(items, this)
 
@@ -103,6 +103,19 @@ class FavoritesDialog(context: Context, val scope: CoroutineScope, private val c
         pbLoading.visibility = View.GONE
         listView.visibility = if (items.isEmpty()) View.GONE else View.VISIBLE
         tvPlaceholder.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
+        updateWindowSize()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        updateWindowSize()
+    }
+
+    private fun updateWindowSize() {
+        val metrics = context.resources.displayMetrics
+        val desiredHeight = ((112 + items.size.coerceAtLeast(1) * 104) * metrics.density).toInt()
+        window?.setLayout((metrics.widthPixels * 0.72f).toInt(),
+            desiredHeight.coerceAtMost((metrics.heightPixels * 0.78f).toInt()))
     }
 
     override fun onDeleteClick(favorite: FavoriteItem) {

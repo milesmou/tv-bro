@@ -1,647 +1,380 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>TV Bro: Home</title>
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>浏览器: Home</title>
     <style>
-body {
-    color:#343a3c;
-    background-color:#EDF6FF;
-}
-@media (prefers-color-scheme: dark) {
-    body {
-        color:#f8f9fa;
-        background-color:#343a3c;
-    }    
-}
-
-#suggestions {
-    width: 65vw;
-    margin: auto;
-    table-layout: fixed;
-    outline: none;
-    position: relative;
-    top: 18vh;
-    -webkit-border-horizontal-spacing: 1vw;
-    -webkit-border-vertical-spacing: 2vh !important;
-    border-spacing: 1vw;
-}
-
-td {
-    overflow: hidden;
-    white-space: nowrap;
-    word-wrap: break-word;
-    outline:none;
-}
-
-.sugg {
-    padding: 1vh 1vw;
-    white-space: nowrap;
-    word-wrap: break-word;
-    transition: .5s;
-    color: #4F4F4F;
-    background: #FFFFFF;
-    box-shadow: 0px 1px 12px rgb(134 192 255 / 16%);
-    border: 2px solid #FFFFFF;
-    border-radius: 0.5vw;
-}
-@media (prefers-color-scheme: dark) {
-    .sugg {
-        color: #f8f9fa;
-        background: #1e2122;
-        box-shadow: 0px 1px 12px rgb(0 0 0 / 16%);
-        border: 2px solid #343a3c;
-    }
-}
-.sugg:hover {
-    transition:.5s;
-    background: #F3F6FA;
-    border: 2px solid #A5D0FF;
-    border-radius: 12px;
-}
-@media (prefers-color-scheme: dark) {
-    .sugg:hover {
-        background: #343a3c;
-        border: 2px solid #A5D0FF;
-        border-radius: 12px;
-    }
-}
-.sugg:hover > div:nth-child(2) {
-    color: #6666aa;
-}
-.sugg-ico {
-    width: 4vw;
-    float: left;
-    color-scheme: only light;
-}
-.sugg-title {
-    display: block;
-    max-width: 90%;
-    margin-left: 5vw;
-    font-family: 'Roboto';
-    font-style: normal;
-    font-weight: 600;
-    font-size: 1.3vw;
-    line-height: 2.5vw;
-    background-color: transparent;
-}
-.sugg-title.empty {
-    background-color: #fcfcfc;
-}
-@media (prefers-color-scheme: dark) {
-    .sugg-title.empty {
-        background-color: #1f2425;
-        border-radius: 12px;
-    }
-}
-.ellipsize, .sugg-title, .sugg-desk{
-    text-overflow: ellipsis;
-    overflow: hidden;
-}
-.sugg-desk {
-    display: block;
-    color: #BDBDBD;
-    margin-left: 5vw;
-    font-family: 'Roboto';
-    font-style: normal;
-    font-weight: 400;
-    font-size: 1vw;
-    line-height: 1.5vw;
-    background-color: transparent;
-}
-@media (prefers-color-scheme: dark) {
-    .sugg-desk {
-        color: #f8f9fa;
-    }
-}
-.sugg-desk.empty {
-    background-color: #fafafa;
-    border-radius: 12px;
-}
-@media (prefers-color-scheme: dark) {
-    .sugg-desk.empty {
-        background-color: #1f2425;
-    }
-}
-.more {
-    width: 1vw;
-    float: right;
-    margin-top: 1vh;
-    cursor: pointer;
-    display: none;
-}
-.logo {
-    width: 10vw;
-    height: 7.5vw;
-    margin-top: 5vh;
-    background-image: url("logo.png");
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: contain;
-    position: absolute;
-    color-scheme: only light;
-}
-
-.wrapper {
-    position: relative;
-    top: 15vh;
-    width: 63vw;
-    margin: auto;
-}
-
-.search_box{
-    background: #fff;
-    border-radius: 0.5vw;
-    height: 3vw;
-    display: flex;
-    padding: 0.5vw;
-    box-shadow: 0 8px 6px -10px #b3c6ff;
-}
-@media (prefers-color-scheme: dark) {
-    .search_box{
-        background: #1e2122;
-        box-shadow: 0 8px 6px -10px #000000;
-    }
-}
-
-.wrapper .search_box .dropdown{
-  width: 7vw;
-  border-right: 2px solid #dde2f1;
-  color: #9fa3b1;
-  position: relative;
-  cursor: pointer;
-}
-@media (prefers-color-scheme: dark) {
-    .wrapper .search_box .dropdown{
-        border-right: 2px solid #343a3c;
-        color: #f8f9fa;
-    }
-}
-
-.wrapper .search_box .dropdown .default_option{
-    display: block;
-    background: url(favicons/google.png) no-repeat;
-    width: 3vw;
-    height: 3vw;
-    margin-left: 1vw;
-    background-size: 3vw;
-    border: none;
-}
-
-.wrapper .search_box .dropdown ul{
-    z-index: 1;
-    position: absolute;
-    font-size: 2vw;
-    list-style-type: none;
-    background: #fff;
-    width: 16vw;
-    border-radius: 0.5vw;
-    padding: 1vw;
-    display: none;
-    box-shadow: 0.5vw 0.5vw 2vw -0.5vw #b3c6ff;
-}
-@media (prefers-color-scheme: dark) {
-    .wrapper .search_box .dropdown ul{
-        background: #1e2122;
-        box-shadow: 0.5vw 0.5vw 2vw -0.5vw #000000;
-    }
-}
-
-.wrapper .search_box .dropdown ul.active{
-  display: block;
-}
-
-.wrapper .search_box .dropdown ul li{
-  padding-bottom: 20px;
-}
-
-.wrapper .search_box .dropdown ul li img {
-    width: 2vw;
-    height: 2vw;
-    display: block;
-    float: left;
-    margin-right: 0.5vw;
-    color-scheme: only light;
-}
-
-.wrapper .search_box .dropdown ul li:last-child{
-  padding-bottom: 0;
-}
-
-.wrapper .search_box .dropdown ul li:hover{
-  color: #6f768d;
-}
-
-.wrapper .search_box .dropdown:before{
-    content: "";
-    position: absolute;
-    top: 1.2vw;
-    right: 1vw;
-    border: 0.45vw solid;
-    border-color: #5078ef transparent transparent transparent;
-}
-
-.wrapper .search_box .search_field{
-  width: 100%;
-  height: 100%;
-  position: relative;
-  display: flex;
-}
-
-.wrapper .search_box .search_field .input{
-    width: 100%;
-    height: 100%;
-    border: 0px;
-    font-size: 1.5vw;
-    padding-left: 1vw;
-    padding-right: 3vw;
-    color: #6f768d;
-    flex-grow: 1;
-}
-@media (prefers-color-scheme: dark) {
-    .wrapper .search_box .search_field .input{
-        color: #f8f9fa;
-        background-color: #1e2122;
-    }
-}
-
-.wrapper .search_box .search_field .fas{
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  font-size: 22px;
-  color: #5078ef;
-  cursor: pointer;
-}
-@media (prefers-color-scheme: dark) {
-    .wrapper .search_box .search_field .fas{
-        color: #f8f9fa;
-    }
-}
-
-.wrapper .search_box .search_action_container{
-    border-left: 2px solid #dde2f1;
-    width: 4vw;
-    cursor: pointer;
-    margin-left: 2px;
-}
-@media (prefers-color-scheme: dark) {
-    .wrapper .search_box .search_action_container{
-        border-left: 2px solid #343a3c;
-    }
-}
-
-.wrapper .search_box .search_action_container .mic{
-    width: 3vw;
-    height: 2.4vw;
-    margin: 0.3vw;
-    background-image: url(mic.svg);
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: contain;
-}
-
-.wrapper .search_box .search_action_container .lenz{
-    width: 3vw;
-    height: 2.4vw;
-    margin: 0.3vw;
-    background-image: url(search.svg);
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: contain;
-    display: none;
-}
-
-::-webkit-input-placeholder { /* Chrome/Opera/Safari */
-    color: #9fa3b1;
-}
-::-moz-placeholder { /* Firefox 19+ */
-    color: #9fa3b1;
-}
+        * { box-sizing: border-box; }
+        html, body { margin: 0; min-height: 100%; }
+        body { color: #c1c5d5; font-family: Arial, "Noto Sans", sans-serif; background: #0d1020; overflow: hidden; }
+        body::before { content: ""; position: fixed; inset: 0; z-index: -2;
+            background: radial-gradient(ellipse at 8% 14%, #3b4788 0, #242943 33%, #141725 67%, #111420 100%); }
+        body::after { content: ""; position: fixed; left: -20vw; top: 43vh; width: 140vw; height: 100vh;
+            z-index: -1; border-radius: 50% 50% 0 0 / 36vh 36vh 0 0; background: #0d1020;
+            box-shadow: 0 -1.2vh 4vh #5a3ba350, inset 0 3vh 8vh #21154890; pointer-events: none; }
+        button, input { font: inherit; }
+        button { border: 0; cursor: pointer; color: inherit; }
+        button:focus, .site:focus { outline: 3px solid #8d9dff; outline-offset: 4px; }
+        .topbar { height: 11.5vh; display: flex; align-items: center; padding: 0 3.2vw 0 1.4vw; gap: 1.4vw; }
+        .brand { display: block; width: 2.2vw; flex-shrink: 0; color: #f2f3fa; pointer-events: none; user-select: none; }
+        .brand svg { width: 100%; height: 100%; }
+        .search { height: 6.5vh; width: 23vw; min-width: 270px; display: flex; align-items: center;
+            border-radius: .8vw; background: #ffffff0b; border: 1px solid transparent; }
+        .search:focus-within { background: #ffffff16; border-color: #8d9dff; }
+        .search-icon { width: 3.7vw; height: 100%; padding: .8vw; background: none; flex-shrink: 0; }
+        .search input { min-width: 0; width: 100%; background: none; border: 0; outline: 0; color: #f5f6ff;
+            font-size: 1.3vw; padding-right: 1vw; }
+        .search input::placeholder { color: #9ca3c5; }
+        .tools { margin-left: auto; display: flex; gap: 1.7vw; align-items: center; }
+        .tool { position: relative; background: none; width: 3.3vw; height: 6vh; border-radius: 50%; padding: .8vw; }
+        svg { display: block; width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2;
+            stroke-linecap: round; stroke-linejoin: round; }
+        .tool:hover, .tool:focus { color: #fff; background: #ffffff25; }
+        .tool .caption { display: none; position: absolute; left: 50%; transform: translateX(-50%);
+            top: 6.4vh; white-space: nowrap; font-size: 1vw; }
+        .tool:hover .caption, .tool:focus .caption { display: block; }
+        .sidebar { position: fixed; top: 11.5vh; bottom: 0; left: 0; width: 5.1vw; border-right: 1px solid #ffffff20;
+            display: flex; align-items: center; flex-direction: column; gap: 2vh; padding-top: 1vh; }
+        .side { width: 3.4vw; height: 6vh; padding: .8vw; background: none; border-radius: .7vw; }
+        .side.active, .side:hover, .side:focus { background: #ffffff12; color: #fff; }
+        main { margin: 0 2.5vw 0 6.7vw; height: 88.5vh; overflow-x: hidden; overflow-y: auto;
+            padding: max(1vh, 12px) max(.7vw, 12px) 3vh 12px; scrollbar-width: none; }
+        main::-webkit-scrollbar { display: none; }
+        .sites { display: grid; grid-template-columns: repeat(auto-fit, minmax(15.5vw, 1fr));
+            column-gap: 1.7vw; row-gap: 3vh; padding: .5vh .3vw; }
+        .site { width: 100%; min-width: 0; text-align: left; background: none; padding: 0; border-radius: .5vw; }
+        .art { position: relative; height: 15.6vh; border-radius: .5vw; display: flex; justify-content: center;
+            align-items: center; background: #fff; color: #303849; overflow: hidden; transition: transform .15s; }
+        .site:hover .art, .site:focus .art { transform: scale(1.025); }
+        .site-title { display: block; font-size: 1vw; padding-top: 1.5vh; white-space: nowrap; overflow: hidden;
+            text-overflow: ellipsis; }
+        .site img { width: 4.8vw; height: 4.8vw; object-fit: contain; }
+        .brand-icon { margin-right: .8vw; }
+        .brand-icon.rounded { border-radius: .7vw; }
+        .brand-name { font-size: 1.7vw; font-weight: 700; }
+        .monogram { font-weight: 700; font-size: 2.5vw; letter-spacing: -.1vw; }
+        .youtube::before { content: "▶"; display: inline-block; background: #ff0000; color: #fff;
+            border-radius: .6vw; padding: .15vw .7vw; margin-right: .4vw; font-size: 1.8vw; vertical-align: middle; }
+        .site-edit { position: absolute; bottom: .5vh; right: .4vw; background: #0009; color: #fff;
+            border-radius: .25vw; padding: .15vw .4vw; font-size: 1vw; line-height: 1; }
+        .site-edit:focus { outline: 2px solid #8d9dff; }
+        .empty .art { background: #ffffff0b; color: #bdc8ff; border: 1px dashed #8795c077; }
+        @media (max-width: 720px) {
+            .search { min-width: 0; width: 36vw; }
+            .search input { font-size: 2vw; }
+            .tools { gap: .8vw; }
+            .tool { width: 4vw; }
+            .site-title { font-size: 1.6vw; }
+        }
     </style>
 </head>
 <body>
-<div style="height: 100%; width: 100%; position: absolute; left: 0; top: 0; overflow-x: hidden;">
-    <div class="logo"></div>
-    <div class="wrapper">
-        <div class="search_box">
-            <div class="dropdown">
-                <div class="default_option" onclick="onSearchEngineDropDownClick();"></div>  
-                <ul id="search-engines-list">
-                  <li onclick="applySearchEngine('google', null, true);"><img src="favicons/google.png" /> Google</li>
-                  <li onclick="applySearchEngine('bing', null, true);"><img src="favicons/bing.png" /> Bing</li>
-                  <li onclick="applySearchEngine('yahoo', null, true);"><img src="favicons/yahoo.png" /> Yahoo!</li>
-                  <li onclick="applySearchEngine('ddg', null, true);"><img src="favicons/ddg.png" /> DuckDuckGo</li>
-                  <li onclick="applySearchEngine('yandex', null, true);"><img src="favicons/yandex.png" /> Yandex</li>
-                  <li onclick="applySearchEngine('startpage', null, true);"><img src="favicons/startpage.png" /> Startpage</li>
-                  <li onclick="applySearchEngine('custom', promptCustomSearchEngineUrl(), true);"><img src="favicons/custom.png" /> Custom</li>
-                </ul>
-            </div>
-            <div class="search_field">
-                <input type="text" id="search-input" class="input" placeholder="Search">
-                <div class="search_action_container">
-                    <div class="mic"></div>
-                    <div class="lenz"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <table cellspacing="32" id="suggestions">
-        <tr>
-            <td onclick="onSuggestionClicked(0)">
-                <div class="sugg" style="margin-left: 0;" id="sugg0">
-                    <img class="sugg-ico" onerror="onIcoLoadError(this)" />
-                    <img src="more.svg" class="more" />
-                    <div class="sugg-title">&nbsp;</div>
-                    <div class="sugg-desk">&nbsp;</div>                    
-                </div>
-            </td>
-            <td onclick="onSuggestionClicked(1)">
-                <div class="sugg" style="margin-left: 0;" id="sugg1">
-                    <img class="sugg-ico" onerror="onIcoLoadError(this)" />
-                    <img src="more.svg" class="more" />
-                    <div class="sugg-title">&nbsp;</div>
-                    <div class="sugg-desk">&nbsp;</div>
-                </div>
-            </td>
-        </tr>
-        <tr>
-            <td onclick="onSuggestionClicked(2)">
-                <div class="sugg" style="margin-left: 0;" id="sugg2">
-                    <img class="sugg-ico" onerror="onIcoLoadError(this)" />
-                    <img src="more.svg" class="more" />
-                    <div class="sugg-title">&nbsp;</div>
-                    <div class="sugg-desk">&nbsp;</div>
-                </div>
-            </td>
-            <td onclick="onSuggestionClicked(3)">
-                <div class="sugg" style="margin-left: 0;" id="sugg3">
-                    <img class="sugg-ico" onerror="onIcoLoadError(this)" />
-                    <img src="more.svg" class="more" />
-                    <div class="sugg-title">&nbsp;</div>
-                    <div class="sugg-desk">&nbsp;</div>
-                </div>
-            </td>
-        </tr>
-        <tr>
-            <td onclick="onSuggestionClicked(4)">
-                <div class="sugg" style="margin-left: 0;" id="sugg4">
-                    <img class="sugg-ico" onerror="onIcoLoadError(this)" />
-                    <img src="more.svg" class="more" />
-                    <div class="sugg-title">&nbsp;</div>
-                    <div class="sugg-desk">&nbsp;</div>
-                </div>
-            </td>
-            <td onclick="onSuggestionClicked(5)">
-                <div class="sugg" style="margin-left: 0;" id="sugg5">
-                    <img class="sugg-ico" onerror="onIcoLoadError(this)" />
-                    <img src="more.svg" class="more" />
-                    <div class="sugg-title">&nbsp;</div>
-                    <div class="sugg-desk">&nbsp;</div>
-                </div>
-            </td>
-        </tr>
-        <tr>
-            <td onclick="onSuggestionClicked(6)">
-                <div class="sugg" style="margin-left: 0;" id="sugg6">
-                    <img class="sugg-ico" onerror="onIcoLoadError(this)" />
-                    <img src="more.svg" class="more" />
-                    <div class="sugg-title">&nbsp;</div>
-                    <div class="sugg-desk">&nbsp;</div>
-                </div>
-            </td>
-            <td onclick="onSuggestionClicked(7)">
-                <div class="sugg" style="margin-left: 0;" id="sugg7">
-                    <img class="sugg-ico" onerror="onIcoLoadError(this)" />
-                    <img src="more.svg" class="more" />
-                    <div class="sugg-title">&nbsp;</div>
-                    <div class="sugg-desk">&nbsp;</div>
-                </div>
-            </td>
-        </tr>
-    </table>
-</div>
-
-<script>
-var searchEngineUrlMap = {
-        "google": "https://www.google.com/search?q=[query]",
-        "bing": "https://www.bing.com/search?q=[query]",
-        "yahoo": "https://search.yahoo.com/search?p=[query]",
-        "ddg": "https://duckduckgo.com/?q=[query]",
-        "yandex": "https://yandex.com/search/?text=[query]",
-        "startpage": "https://www.startpage.com/sp/search?query=[query]",
-        "custom": ""
-    };
-var recommendationsToDisplay = [];
-var homePageLinksMode = "RECOMMENDATIONS";
-
-function onIcoLoadError(element) {
-    element.src='ic_not_available.svg';
-    element.style.filter = "invert(1)";
-}
-
-function onSuggestionClicked(index) {
-    var bookmark = null;
-    if (homePageLinksMode === "BOOKMARKS" && window.hasOwnProperty( "TVBro" )) {
-        bookmark = recommendationsToDisplay.find(function (b) { return b.order === index; });
-        if (bookmark && TVBro.hasOwnProperty("markBookmarkRecommendationAsUseful")) {
-            TVBro.markBookmarkRecommendationAsUseful(index);
+    <svg style="display:none" aria-hidden="true"><defs>
+        <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></symbol>
+        <symbol id="i-home" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="m2 11 10-9 10 9h-3v11h-5v-7h-4v7H5V11z"/></symbol>
+        <symbol id="i-star" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="m12 2 3 7 8 1-6 5 2 8-7-4-7 4 2-8-6-5 8-1z"/></symbol>
+        <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="currentColor" stroke="none"/><path d="M12 6v6h5" stroke="#20253a"/></symbol>
+        <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></symbol>
+        <symbol id="i-tabs" viewBox="0 0 24 24"><rect x="6" y="6" width="15" height="15" rx="2"/><path d="M17 3H3v14M10 13h7m-3.5-3.5v7"/></symbol>
+        <symbol id="i-private" viewBox="0 0 24 24"><path d="M4 11h16M7 11l2-7h6l2 7M3 3l18 18"/><circle cx="7" cy="17" r="3"/><circle cx="17" cy="17" r="3"/></symbol>
+        <symbol id="i-settings" viewBox="0 0 24 24"><path d="m9 2-1 3-3 1-2 3 2 3-1 3 2 3h3l3 3 3-2h3l2-3-1-3 2-3-2-3-3-1-1-3z"/><circle cx="12" cy="12" r="3"/></symbol>
+    </defs></svg>
+    <header class="topbar">
+        <span class="brand" aria-hidden="true">
+            <svg viewBox="10 10 88 84" style="stroke-width:4">
+                <path d="M42 25L33 16M66 25L75 16" stroke="#aabaff"/>
+                <rect x="19" y="26" width="70" height="55" rx="13"/>
+                <circle cx="54" cy="53" r="18" stroke="#bdcbff" stroke-width="3"/>
+                <ellipse cx="54" cy="53" rx="7" ry="18" stroke="#bdcbff" stroke-width="2.5"/>
+                <path d="M36 53H72" stroke="#bdcbff" stroke-width="2.5"/>
+                <path d="M32 83L29 89M76 83L79 89"/>
+            </svg>
+        </span>
+        <form class="search" id="search-form">
+            <span class="search-icon" aria-hidden="true" onclick="homeAction('search')"><svg><use href="#i-search"/></svg></span>
+            <input id="search-input" type="text" autocomplete="off" readonly onclick="homeAction('search')">
+        </form>
+        <nav class="tools">
+            <button class="tool" onclick="homeAction('tabs')" data-label="tabs"><svg><use href="#i-tabs"/></svg><span class="caption"></span></button>
+            <button class="tool" onclick="homeAction('downloads')" data-label="downloads"><svg><use href="#i-download"/></svg><span class="caption"></span></button>
+            <button class="tool" onclick="homeAction('incognito')" data-label="incognito"><svg><use href="#i-private"/></svg><span class="caption"></span></button>
+            <button class="tool" onclick="homeAction('settings')" data-label="settings"><svg><use href="#i-settings"/></svg><span class="caption"></span></button>
+        </nav>
+    </header>
+    <nav class="sidebar">
+        <button class="side active" onclick="location.reload()" data-label="home"><svg><use href="#i-home"/></svg></button>
+        <button class="side" onclick="homeAction('favorites')" data-label="favorites"><svg><use href="#i-star"/></svg></button>
+        <button class="side" onclick="homeAction('history')" data-label="history"><svg><use href="#i-clock"/></svg></button>
+    </nav>
+    <main><div id="suggestions" class="sites"></div></main>
+    <script>
+        var language = (navigator.language || "en").toLowerCase();
+        var homeLocale = language.indexOf("zh") === 0 ? (/hant|tw|hk|mo/.test(language) ? "zh-Hant" : "zh-Hans") : "en";
+        var messages = {
+            en: {title:"浏览器: Home", search:"Search or enter URL", home:"Home", tabs:"Tabs",
+                downloads:"Downloads", favorites:"Bookmarks", history:"History", incognito:"Private browsing",
+                settings:"Settings", engine:"Search engine", recommended:"Recommended", custom:"Custom", edit:"Edit bookmark",
+                add:"Add", prompt:"Enter search engine URL (use [query] as placeholder)", bing:"Bing China"},
+            "zh-Hans": {title:"浏览器：主页", search:"搜索或输入 URL", home:"主页", tabs:"标签页",
+                downloads:"下载", favorites:"书签", history:"历史记录", incognito:"无痕浏览", settings:"设置",
+                engine:"搜索引擎", recommended:"推荐", custom:"自定义", edit:"编辑书签", add:"添加",
+                prompt:"输入搜索引擎网址（使用 [query] 作为查询占位符）", bing:"必应中国"},
+            "zh-Hant": {title:"浏览器：首頁", search:"搜尋或輸入 URL", home:"首頁", tabs:"分頁",
+                downloads:"下載", favorites:"書籤", history:"歷史記錄", incognito:"無痕瀏覽", settings:"設定",
+                engine:"搜尋引擎", recommended:"推薦", custom:"自訂", edit:"編輯書籤", add:"新增",
+                prompt:"輸入搜尋引擎網址（使用 [query] 作為查詢預留位置）", bing:"必應中國"}
+        };
+        var homeText = messages[homeLocale];
+        document.documentElement.lang = homeLocale;
+        document.title = homeText.title;
+        document.getElementById("search-input").placeholder = homeText.search;
+        document.getElementById("search-input").setAttribute("aria-label", homeText.search);
+        document.querySelectorAll("[data-label]").forEach(function(element) {
+            var label = homeText[element.dataset.label];
+            element.setAttribute("aria-label", label);
+            element.title = label;
+            var caption = element.querySelector(".caption");
+            if (caption) caption.textContent = label;
+        });
+        var searchEngineUrlMap = {
+            bing:"https://cn.bing.com/search?q=[query]", custom:""
+        };
+        var savedEngine = localStorage.getItem("search-engine") || "bing";
+        var searchEngine = savedEngine === "bing" ? "bing" : "custom";
+        var searchEngineUrl = localStorage.getItem("search-engine-url") || searchEngineUrlMap.bing;
+        var recommendationsToDisplay = [];
+        var homePageLinksMode = "RECOMMENDATIONS";
+        function homeAction(action) {
+            if (window.TVBro && TVBro.openHomeAction) TVBro.openHomeAction(action);
         }
-    } else {
-        if (index >= recommendationsToDisplay.length) return;
-        bookmark = recommendationsToDisplay[index];
-    }
-    if (!bookmark) return;
-    var url = bookmark.dest_url ? bookmark.dest_url : bookmark.url;
-    window.location.href = url;
-}
-
-function loadRecommendations() {
-    return [
-        {"title": "Wikipedia - the free encyclopedia", "url":"https://www.wikipedia.org", "favicon": "https://ru.wikipedia.org/static/apple-touch/wikipedia.png"},
-        {"title": "Reddit - Dive into anything", "url":"https://www.reddit.com", "favicon": "https://www.redditstatic.com/desktop2x/img/favicon/apple-icon-120x120.png"},
-        {"title": "My Tuner", "url":"https://mytuner-radio.com/", "favicon": "https://static2.mytuner.mobi/static/icons/apple-touch-icon-120x120-precomposed.png"},
-        {"title": "Instagram", "url":"https://www.instagram.com", "favicon": "https://static.cdninstagram.com/rsrc.php/v3/ys/r/aM-g435MtEX.png"},
-        {"title": "IMDb", "url":"https://www.imdb.com/", "favicon": "https://m.media-amazon.com/images/G/01/imdb/images-ANDW73HA/favicon_iPhone_retina_180x180._CB1582158069_UX60_.png"},
-        {"title": "eBay", "url":"https://www.ebay.com/", "favicon": "https://www.ebay.com/apple-touch-icon.png"},
-        {"title": "Itch.io", "url":"https://itch.io/games/input-gamepad/platform-web", "favicon": "https://itch.io/static/images/itchio-square-144.png"},
-        {"title": "BBC News", "url":"https://www.bbc.com/news", "favicon": "https://www.bbc.com/apple-touch-icon-120x120-precomposed.png"}
-    ];
-}
-
-function renderLinks(mode, linksArray) {
-    //both parameters are optional
-    console.log("Rendering links: mode=" + mode + ", linksArray=" + JSON.stringify(linksArray));
-    homePageLinksMode = mode ? mode : "RECOMMENDATIONS";
-    recommendationsToDisplay = linksArray ? linksArray : loadRecommendations();
-
-    recommendationsToDisplay.map(function(c, i, arr) {
-        if (!c.favicon) {
-            var urlStr = c.url;
-            try {
-                var url = new URL(urlStr);
-                c.favicon = url.origin + "/favicon.ico";
-
-                if (window.hasOwnProperty( "TVBro" )) {
-                    if (TVBro.requestFavicon) {
-                        //GeckoView
-                        TVBro.requestFavicon(urlStr);
-                    } else {
-                        //WebView
-                        c.favicon = "favicon://" + url.host;
-                    }                    
+        function applySearchEngine(engine, url) {
+            searchEngine = engine === "bing" ? "bing" : "custom";
+            searchEngineUrl = url || searchEngineUrlMap[engine] || searchEngineUrlMap.bing;
+            localStorage.setItem("search-engine", searchEngine);
+            localStorage.setItem("search-engine-url", searchEngineUrl);
+        }
+        function performSearch(text) {
+            text = text.trim();
+            if (!text) return;
+            var url;
+            if (/^https?:\/\//i.test(text)) url = text;
+            else if (/^[a-z0-9-]+(\.[a-z0-9-]+)+(\/[^\s]*)?$/i.test(text)) url = "https://" + text;
+            else url = (searchEngineUrl || searchEngineUrlMap.bing).replace("[query]", encodeURIComponent(text));
+            location.href = url;
+        }
+        document.getElementById("search-form").onsubmit = function(event) {
+            event.preventDefault();
+            homeAction("search");
+        };
+        function focusHomeControl(element) {
+            if (!element) return;
+            element.focus({preventScroll:true});
+            if (element.closest(".sites")) element.scrollIntoView({block:"nearest", inline:"nearest"});
+        }
+        function tvBroHandleRemoteKey(key) {
+            var current = document.activeElement;
+            if (key === "LongEnter") {
+                var selected = current && current.closest(".site");
+                if (selected && window.TVBro) TVBro.onEditBookmark(Number(selected.dataset.order));
+                return;
+            }
+            if (key === "Escape") return;
+            if (!current || current === document.body) {
+                focusHomeControl(document.getElementById("search-input"));
+                if (key !== "Enter") return;
+                current = document.activeElement;
+            }
+            if (key === "Enter") {
+                current.click();
+                return;
+            }
+            if (!/^Arrow(Right|Left|Up|Down)$/.test(key)) return;
+            var cards = Array.from(document.querySelectorAll(".site"));
+            var card = current.closest(".site");
+            var columns = getComputedStyle(document.getElementById("suggestions")).gridTemplateColumns.split(" ").length;
+            if (card) {
+                var index = cards.indexOf(card);
+                var next = index;
+                if (key === "ArrowRight" && index % columns < columns - 1) next++;
+                if (key === "ArrowLeft" && index % columns > 0) next--;
+                if (key === "ArrowUp" && index >= columns) next -= columns;
+                if (key === "ArrowDown" && index + columns < cards.length) next += columns;
+                if (cards[next] && next !== index) { focusHomeControl(cards[next]); return; }
+                if (key === "ArrowDown") {
+                    var edit = card.querySelector(".site-edit");
+                    if (edit && current !== edit) { focusHomeControl(edit); return; }
+                    return;
                 }
-            } catch (e) {
-                console.log("Invalid URL: " + urlStr);
-                console.log("Invalid URL: " + urlStr);
+                if (key === "ArrowRight") return;
+            }
+            var rect = (card || current).getBoundingClientRect();
+            var x = rect.left + rect.width / 2, y = rect.top + rect.height / 2;
+            var horizontal = key === "ArrowLeft" || key === "ArrowRight";
+            var positive = key === "ArrowRight" || key === "ArrowDown";
+            var best = null, score = Infinity;
+            document.querySelectorAll(".topbar button, #search-input, .sidebar button, .site").forEach(function(element) {
+                if (element === current || element === card || !element.getClientRects().length) return;
+                var target = element.getBoundingClientRect();
+                var dx = target.left + target.width / 2 - x;
+                var dy = target.top + target.height / 2 - y;
+                var distance = horizontal ? dx : dy;
+                if ((positive ? distance : -distance) <= 1) return;
+                var value = Math.abs(distance) + Math.abs(horizontal ? dy : dx) * 3;
+                if (value < score) { best = element; score = value; }
+            });
+            focusHomeControl(best);
+        }
+        var confirmTimer = null, confirmHeld = false, confirmLongPressed = false;
+        document.addEventListener("keydown", function(event) {
+            if (/^Arrow(Right|Left|Up|Down)$/.test(event.key) || event.key === "Enter" || event.key === "Escape") {
+                event.preventDefault();
+                if (event.key === "Enter") {
+                    if (!confirmHeld) {
+                        confirmHeld = true;
+                        confirmLongPressed = false;
+                        confirmTimer = setTimeout(function() {
+                            confirmLongPressed = true;
+                            tvBroHandleRemoteKey("LongEnter");
+                        }, 600);
+                    }
+                } else tvBroHandleRemoteKey(event.key);
+            }
+        });
+        document.addEventListener("keyup", function(event) {
+            if (event.key !== "Enter") return;
+            event.preventDefault();
+            clearTimeout(confirmTimer);
+            if (confirmHeld && !confirmLongPressed) tvBroHandleRemoteKey("Enter");
+            confirmHeld = false;
+        });
+        window.addEventListener("blur", function() {
+            clearTimeout(confirmTimer);
+            confirmHeld = false;
+        });
+        document.getElementById("search-input").focus();
+        function loadRecommendations() {
+            return [
+                {title:"腾讯视频", url:"https://v.qq.com/"},
+                {title:"爱奇艺", url:"https://www.iqiyi.com/"},
+                {title:"优酷", url:"https://www.youku.com/"},
+                {title:"芒果TV", url:"https://www.mgtv.com/"},
+                {title:"哔哩哔哩", url:"https://www.bilibili.com/"},
+                {title:"虎牙", url:"https://www.huya.com/"},
+                {title:"斗鱼", url:"https://www.douyu.com/"}
+            ];
+        }
+        function onSuggestionClicked(index) {
+            var link = homePageLinksMode === "BOOKMARKS"
+                ? recommendationsToDisplay.find(function(item) { return item.order === index; }) : recommendationsToDisplay[index];
+            if (!link) { if (window.TVBro) TVBro.onEditBookmark(index); return; }
+            if (homePageLinksMode === "BOOKMARKS" && window.TVBro && TVBro.markBookmarkRecommendationAsUseful)
+                TVBro.markBookmarkRecommendationAsUseful(index);
+            location.href = link.dest_url || link.url;
+        }
+        function renderLinks(mode, links) {
+            var focusedCard = document.activeElement.closest(".site");
+            var focusOrder = focusedCard ? Number(focusedCard.dataset.order) : null;
+            var focusFavoriteId = focusedCard ? focusedCard.dataset.favoriteId : null;
+            homePageLinksMode = mode || "RECOMMENDATIONS";
+            recommendationsToDisplay = links || loadRecommendations();
+            var container = document.getElementById("suggestions");
+            container.textContent = "";
+            var cardCount = homePageLinksMode === "BOOKMARKS"
+                ? recommendationsToDisplay.reduce(function(max, item) { return Math.max(max, item.order + 1); }, 0) + 1
+                : recommendationsToDisplay.length;
+            for (var i = 0; i < cardCount; i++) {
+                (function(index) {
+                    var link = homePageLinksMode === "BOOKMARKS"
+                        ? recommendationsToDisplay.find(function(item) { return item.order === index; }) : recommendationsToDisplay[index];
+                    var card = document.createElement("button");
+                    card.className = "site" + (link ? "" : " empty");
+                    card.dataset.order = index;
+                    if (link && link.favoriteId) card.dataset.favoriteId = link.favoriteId;
+                    card.onclick = function() { onSuggestionClicked(index); };
+                    var art = document.createElement("span");
+                    art.className = "art";
+                    var title = document.createElement("span");
+                    title.className = "site-title";
+                    title.textContent = link ? link.title : homeText.add;
+                    if (link) {
+                        var host = "";
+                        try { host = new URL(link.url).hostname.replace(/^www\./, ""); } catch (e) {}
+                        var brands = {
+                            "v.qq.com":["腾讯视频","#173f39","#69e1b4"],
+                            "iqiyi.com":["爱奇艺","#263a1d","#b4ec69"],
+                            "youku.com":["优酷","#303051","#ff8f9d"],
+                            "mgtv.com":["芒果TV","#503020","#ffd180"],
+                            "bilibili.com":["哔哩哔哩","#203d50","#80dfff"],
+                            "huya.com":["虎牙","#4b3023","#ffc082"],
+                            "douyu.com":["斗鱼","#503038","#ffacac"]
+                        };
+                        var brand = brands[host];
+                        if (brand) {
+                            var brandIcons = {"v.qq.com":"tencent", "iqiyi.com":"iqiyi", "youku.com":"youku",
+                                "mgtv.com":"mgtv", "bilibili.com":"bilibili", "huya.com":"huya", "douyu.com":"douyu"};
+                            var brandIcon = document.createElement("img");
+                            brandIcon.className = "brand-icon";
+                            brandIcon.alt = "";
+                            var brandKey = brandIcons[host];
+                            brandIcon.src = "icons/" + brandKey +
+                                (brandKey === "bilibili" || brandKey === "huya" ? ".svg" : ".png");
+                            if (brandKey === "iqiyi" || brandKey === "youku" || brandKey === "douyu") {
+                                brandIcon.classList.add("rounded");
+                            }
+                            art.appendChild(brandIcon);
+                            var logo = document.createElement("span");
+                            logo.className = "brand-name";
+                            logo.textContent = brand[0];
+                            art.style.background = brand[1];
+                            art.style.color = brand[2];
+                            art.appendChild(logo);
+                        } else {
+                            var icon = document.createElement("img");
+                            icon.alt = "";
+                            icon.src = link.favicon || ("favicon://" + host);
+                            icon.onerror = function() { this.style.display = "none"; };
+                            art.appendChild(icon);
+                            var name = document.createElement("span");
+                            name.className = "monogram";
+                            name.style.fontSize = "1.6vw";
+                            name.textContent = link.title.split(" - ")[0];
+                            art.appendChild(name);
+                        }
+                    } else {
+                        art.textContent = "+";
+                        art.style.fontSize = "4vw";
+                    }
+                    if (link && homePageLinksMode === "BOOKMARKS" && window.TVBro) {
+                        var edit = document.createElement("span");
+                        edit.className = "site-edit";
+                        edit.tabIndex = 0;
+                        edit.setAttribute("role", "button");
+                        edit.setAttribute("aria-label", homeText.edit);
+                        edit.textContent = "⋯";
+                        edit.onclick = function(event) { event.stopPropagation(); TVBro.onEditBookmark(index); };
+                        edit.onkeydown = function(event) { if (event.key === "Enter") { event.preventDefault(); event.stopPropagation(); TVBro.onEditBookmark(index); } };
+                        art.appendChild(edit);
+                    }
+                    card.appendChild(art);
+                    card.appendChild(title);
+                    container.appendChild(card);
+                })(i);
+            }
+            if (focusOrder !== null) {
+                var sameCard = Array.from(container.children).find(function(card) {
+                    return focusFavoriteId && card.dataset.favoriteId === focusFavoriteId;
+                });
+                focusHomeControl(sameCard || container.children[Math.min(focusOrder, container.children.length - 1)]);
             }
         }
-        return c;
-    })
-    
-    console.log("Rendering links: recommendationsToDisplay=" + JSON.stringify(recommendationsToDisplay));
-    
-    for (var i = 0; i < 8; i++) {
-        var suggElement = document.getElementById("sugg" + i);
-        if (suggElement) {
-            var link;
-            if (homePageLinksMode == "BOOKMARKS" && window.hasOwnProperty( "TVBro" )) {
-                link = recommendationsToDisplay.find(function(c) { return c.order == i; });
-            } else {
-                link = recommendationsToDisplay[i];
-            }
-
-            //console.log("Rendering link: " + link);
-
-            var titleElement = suggElement.getElementsByClassName("sugg-title")[0];
-            var descriptionElement = suggElement.getElementsByClassName("sugg-desk")[0];
-            var icon = suggElement.getElementsByClassName("sugg-ico")[0];
-            if (link) {
-                icon.src = link.favicon;
-                //color-scheme: only light;
-                icon.style.filter = "";
-                titleElement.innerHTML = link.title;
-                descriptionElement.innerHTML = link.description ? link.description : escapeHTML(link.url);
-            } else {
-                icon.src = "ic_not_available.svg";
-                //color-scheme: default;
-                icon.style.filter = "invert(1)";
-                titleElement.innerHTML = "&nbsp;";
-                descriptionElement.innerHTML = "&nbsp;";
-            }
-
-            titleElement.classList.toggle("empty", !link);
-            descriptionElement.classList.toggle("empty", !link);
-
-            if (homePageLinksMode == "BOOKMARKS" && window.hasOwnProperty( "TVBro" )) {
-                var moreElement = suggElement.getElementsByClassName("more")[0]; 
-                moreElement.style.display = "block";
-                moreElement.onclick = function(e) {
-                    var index = parseInt(e.target.parentElement.id.substring(4));
-                    TVBro.onEditBookmark(index);
-                    e.stopPropagation();
-                };
-            }
+        function onFaviconLoaded(url, data) {
+            document.querySelectorAll(".site img").forEach(function(icon) {
+                if (icon.getAttribute("src") === "favicon://" + url) icon.src = data;
+            });
         }
-    }
-}
-
-function onSearchEngineDropDownClick() {
-    document.getElementById("search-engines-list").classList.toggle("active");
-}
-
-function promptCustomSearchEngineUrl() {
-    var engine = localStorage.getItem("search-engine");
-    var searchEngineUrl = localStorage.getItem("search-engine-url");
-    searchEngineUrl = searchEngineUrl ? searchEngineUrl : searchEngineUrlMap[engine];
-
-    return prompt("Enter search engine URL (with [query] as placeholder)", searchEngineUrl);
-}
-
-function applySearchEngine(engine, searchEngineUrl, notifyTVBro) {
-    document.getElementById("search-engines-list").classList.remove("active");
-
-    searchEngineUrl = searchEngineUrl ? searchEngineUrl : searchEngineUrlMap[engine];
-
-    localStorage.setItem("search-engine", engine);
-    localStorage.setItem("search-engine-url", searchEngineUrl);
-
-    var iconUrl = "";
-    if (engine == "custom") {
-        var urlOrigin = new URL(searchEngineUrl.replace("[query]", "")).origin;
-        iconUrl = "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&size=120&url=" + urlOrigin;
-    } else {
-        iconUrl = "favicons/" + engine + ".png";
-    }
-    document.getElementsByClassName("default_option")[0].style.backgroundImage = "url('" + iconUrl + "')";    
-
-    if (window.hasOwnProperty( "TVBro" ) && notifyTVBro) {
-        TVBro.setSearchEngine(engine, searchEngineUrl ? searchEngineUrl : searchEngineUrlMap[engine]);
-    }
-}
-
-function performSearch(text) {
-    var searchEngineUrl = localStorage.getItem('search-engine-url') ? localStorage.getItem('search-engine-url') : searchEngineUrlMap['google'];
-    var url = searchEngineUrl.replace("[query]", encodeURIComponent(text));
-    window.open(url, "_self");
-}
-
-//callback called from TVBro/GeckoView
-function onFaviconLoaded(url, data) {
-    let imgElements = document.getElementsByTagName("img");
-    for (let i = 0; i < imgElements.length; i++) {
-        if (imgElements[i].src == "favicon://" + url) {
-            imgElements[i].src = data;
-        }
-    }
-}
-
-function hideVoiceSearchUI() {
-    document.getElementsByClassName("mic")[0].style.display = "none";
-    document.getElementsByClassName("lenz")[0].style.display = "block";
-}
-
-//initialization
-
-var escape = document.createElement('textarea');
-function escapeHTML(html) {
-    escape.textContent = html;
-    return escape.innerHTML;
-}
-
-var searchEngine = localStorage.getItem('search-engine') ? localStorage.getItem('search-engine') : "google";
-var searchEngineUrl = localStorage.getItem('search-engine-url') ? localStorage.getItem('search-engine-url') : searchEngineUrlMap[searchEngine];
-
-document.getElementById("search-input").addEventListener("keydown", function(e) {
-    if (e.keyCode == 13) {
-        performSearch(document.getElementById("search-input").value);
-    }
-});
-
-document.getElementsByClassName("search_action_container")[0].onclick = function() {
-    if (document.getElementsByClassName("mic")[0].style.display == "none") {
-        performSearch(document.getElementById("search-input").value);
-    } else {
-        if (window.hasOwnProperty( "TVBro" )) {
-            TVBro.startVoiceSearch();
-        }
-    }
-};
-
-//there are three modes this page can run in:
-//1. Running inside ordinary web page - TVBro variable is not installed - no bookmarks, no voice search
-//2. Running inside TVBro WebView - TVBro variable is installed
-//3. Running inside TVBro GeckoView - TVBro variable is installed
-
-if (window.hasOwnProperty( "TVBro" )) {
-    console.log("Running inside TVBro");
-    TVBro.onHomePageLoaded();
-} else {
-    hideVoiceSearchUI();
-    applySearchEngine(searchEngine, searchEngineUrl, false);
-    renderLinks();
-}
-
-</script>
+        if (window.TVBro) TVBro.onHomePageLoaded();
+        else { renderLinks(); }
+    </script>
 </body>
 </html>

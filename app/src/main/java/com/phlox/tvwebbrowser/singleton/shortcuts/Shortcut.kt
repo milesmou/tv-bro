@@ -14,7 +14,6 @@ enum class Shortcut private constructor(var titleResId: Int, var prefsKey: Strin
     NAVIGATE_BACK(R.string.navigate_back,  "shortcut_nav_back", 0),
     NAVIGATE_HOME(R.string.navigate_home,  "shortcut_nav_home", 0),
     REFRESH_PAGE(R.string.refresh_page,  "shortcut_refresh_page", 285),//KEYCODE_REFRESH
-    VOICE_SEARCH(R.string.voice_search,  "shortcut_voice_search", KeyEvent.KEYCODE_SEARCH),
     PLAY_PAUSE(R.string.play_pause,  "shortcut_play_pause", KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE),
     MEDIA_STOP(R.string.media_stop, "shortcut_media_stop", KeyEvent.KEYCODE_MEDIA_STOP),
     MEDIA_REWIND(R.string.media_rewind, "shortcut_media_rewind", KeyEvent.KEYCODE_MEDIA_REWIND),

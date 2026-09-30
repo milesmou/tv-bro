@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheckedTextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/text1"
+    android:layout_width="match_parent"
+    android:layout_height="56dp"
+    android:gravity="center_vertical"
+    android:paddingHorizontal="16dp"
+    android:textSize="20sp"
+    android:textColor="@color/day_night_text_color_contrast"
+    android:background="@drawable/remote_option_background"
+    android:checkMark="?android:attr/listChoiceIndicatorSingle"
+    android:checkMarkTint="@color/focus_outline"
+    android:singleLine="true"
+    android:ellipsize="end" />

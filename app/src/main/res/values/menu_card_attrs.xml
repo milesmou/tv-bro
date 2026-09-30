@@ -1,0 +1,5 @@
+<resources>
+    <declare-styleable name="MenuCardButton">
+        <attr name="cardLabel" format="string" />
+    </declare-styleable>
+</resources>

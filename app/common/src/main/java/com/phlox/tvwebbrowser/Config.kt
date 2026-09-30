@@ -12,6 +12,7 @@ class Config(val prefs: SharedPreferences) {
         const val SEARCH_ENGINE_AS_HOME_PAGE_KEY = "search_engine_as_home_page"
         const val HOME_PAGE_KEY = "home_page"
         const val USER_AGENT_PREF_KEY = "user_agent"
+        const val DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
         const val THEME_KEY = "theme"
         const val LAST_UPDATE_USER_NOTIFICATION_TIME_KEY = "last_update_notif"
         const val AUTO_CHECK_UPDATES_KEY = "auto_check_updates"
@@ -38,6 +39,7 @@ class Config(val prefs: SharedPreferences) {
         const val WEB_ENGINE_DEBUG_KEY = "web_engine_debug"
         //const val HOME_PAGE_VERSION_EXTRACTED = "home_page_version_extracted"
         const val INITIAL_BOOKMARKS_SUGGESTIONS_LOADED = "initial_bookmarks_suggestions_loaded"
+        const val HOME_VIDEO_CARDS_LOADED = "home_video_cards_loaded_v1"
         const val ADBLOCK_ENABLED_PREF_KEY = "adblock_enabled"
         const val ADBLOCK_LAST_UPDATE_LIST_KEY = "adblock_last_update"
         const val ADBLOCK_LIST_URL_KEY = "adblock_list_url"
@@ -49,13 +51,13 @@ class Config(val prefs: SharedPreferences) {
         const val ENGINE_WEB_VIEW = "WebView"
 
         const val DEFAULT_ADBLOCK_LIST_URL = "https://easylist.to/easylist/easylist.txt"
-        val SearchEnginesTitles = arrayOf("Google", "Bing", "Yahoo!", "DuckDuckGo", "Yandex", "Startpage", "Custom")
-        val SearchEnginesNames = arrayOf("google", "bing", "yahoo", "ddg", "yandex", "startpage", "custom")
-        val SearchEnginesURLs = listOf("https://www.google.com/search?q=[query]", "https://www.bing.com/search?q=[query]",
-            "https://search.yahoo.com/search?p=[query]", "https://duckduckgo.com/?q=[query]",
-            "https://yandex.com/search/?text=[query]", "https://www.startpage.com/sp/search?query=[query]", "")
+        val SearchEnginesNames = arrayOf("bing", "custom")
+        const val DEFAULT_SEARCH_ENGINE_URL = "https://cn.bing.com/search?q=[query]"
+        val SearchEnginesURLs = listOf(DEFAULT_SEARCH_ENGINE_URL, "")
         val SupportedWebEngines = arrayOf(ENGINE_GECKO_VIEW, ENGINE_WEB_VIEW)
         const val HOME_PAGE_URL = "https://tvbro.phlox.dev/appcontent/home/"
+        fun isAppPage(url: String?): Boolean = url == HOME_URL_ALIAS ||
+            url?.startsWith("https://tvbro.phlox.dev/appcontent/") == true
         //const val HOME_PAGE_URL = "http://10.0.2.2:5000/appcontent/home/"
 
         fun canRecommendGeckoView(): Boolean {
@@ -169,7 +171,7 @@ class Config(val prefs: SharedPreferences) {
             prefs.edit().putString(HOME_PAGE_KEY, value).apply()
         }
 
-    var searchEngineURL = ObservableStringPreference(SearchEnginesURLs[0], SEARCH_ENGINE_URL_PREF_KEY)
+    var searchEngineURL = ObservableStringPreference(DEFAULT_SEARCH_ENGINE_URL, SEARCH_ENGINE_URL_PREF_KEY)
 
     var webEngine: String
         get() {
@@ -215,7 +217,13 @@ class Config(val prefs: SharedPreferences) {
             prefs.edit().putBoolean(INITIAL_BOOKMARKS_SUGGESTIONS_LOADED, value).apply()
         }
 
-    var userAgentString = ObservableOptStringPreference(null, USER_AGENT_PREF_KEY)
+    var homeVideoCardsLoaded: Boolean
+        get() = prefs.getBoolean(HOME_VIDEO_CARDS_LOADED, false)
+        set(value) {
+            prefs.edit().putBoolean(HOME_VIDEO_CARDS_LOADED, value).apply()
+        }
+
+    var userAgentString = ObservableOptStringPreference(DEFAULT_USER_AGENT, USER_AGENT_PREF_KEY)
 
     var adBlockEnabled: Boolean = prefs.getBoolean(ADBLOCK_ENABLED_PREF_KEY, true)
         set(value) {

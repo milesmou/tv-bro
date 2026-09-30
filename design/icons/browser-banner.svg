@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#3b4788"/><stop offset=".65" stop-color="#20253e"/><stop offset="1" stop-color="#111420"/>
+    </linearGradient>
+    <linearGradient id="arc" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#7764cc" stop-opacity=".32"/><stop offset="1" stop-color="#0d1020"/>
+    </linearGradient>
+  </defs>
+  <rect width="320" height="180" fill="url(#bg)"/>
+  <path d="M0 116Q160 61 320 116V180H0Z" fill="url(#arc)"/>
+  <g transform="translate(16 36)">
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M42 25L33 16M66 25L75 16" stroke="#aabaff" stroke-width="4"/>
+      <rect x="19" y="26" width="70" height="55" rx="13" stroke="#f2f3fa" stroke-width="4"/>
+      <circle cx="54" cy="53" r="18" stroke="#bdcbff" stroke-width="3"/>
+      <ellipse cx="54" cy="53" rx="7" ry="18" stroke="#bdcbff" stroke-width="2.5"/>
+      <path d="M36 53H72" stroke="#bdcbff" stroke-width="2.5"/>
+      <path d="M32 83L29 89M76 83L79 89" stroke="#f2f3fa" stroke-width="4"/>
+    </g>
+  </g>
+  <text x="131" y="103" fill="#f2f3fa" font-family="Arial, sans-serif" font-size="36" font-weight="700" letter-spacing=".5">TV Bro</text>
+</svg>

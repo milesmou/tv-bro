@@ -2,9 +2,11 @@ package com.phlox.tvwebbrowser.activity.main.dialogs.settings
 
 import android.app.AlertDialog
 import android.content.Context
+import android.graphics.Rect
 import android.os.Build
 import android.util.AttributeSet
 import android.view.LayoutInflater
+import android.view.KeyEvent
 import android.view.View
 import android.view.animation.AnimationUtils
 import android.widget.AdapterView
@@ -50,6 +52,35 @@ class MainSettingsView @JvmOverloads constructor(
 
         initAdBlockConfigUI()
 
+        vb.etAdBlockerListUrl.setOnKeyListener { _, keyCode, event ->
+            when (keyCode) {
+                KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN -> {
+                    if (event.action == KeyEvent.ACTION_DOWN) {
+                        val target = if (keyCode == KeyEvent.KEYCODE_DPAD_UP) vb.llAdblock
+                        else if (vb.btnAdBlockerUpdate.isShown && vb.btnAdBlockerUpdate.isEnabled)
+                            vb.btnAdBlockerUpdate
+                        else nextOptionAfterAdblock()
+                        target.requestFocus()
+                    }
+                    true
+                }
+                else -> false
+            }
+        }
+        vb.btnAdBlockerUpdate.setOnKeyListener { _, keyCode, event ->
+            when (keyCode) {
+                KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN -> {
+                    if (event.action == KeyEvent.ACTION_DOWN) {
+                        val target = if (keyCode == KeyEvent.KEYCODE_DPAD_UP) vb.etAdBlockerListUrl
+                            else nextOptionAfterAdblock()
+                        target.requestFocus()
+                    }
+                    true
+                }
+                else -> false
+            }
+        }
+
         initThemeSettingsUI()
 
         initWebViewAlgorithmicDarkeningWithDarkUiModeUI()
@@ -64,6 +95,8 @@ class MainSettingsView @JvmOverloads constructor(
 
         initVirtualCursorPhysicsSettingsUI()
 
+        initSwitchFocusStyles()
+
         vb.btnClearWebCache.setOnClickListener {
             (activity as MainActivity).lifecycleScope.launch {
                 WebEngineFactory.clearCache(context)
@@ -72,14 +105,46 @@ class MainSettingsView @JvmOverloads constructor(
         }
     }
 
+    private fun nextOptionAfterAdblock(): View =
+        if (vb.spTheme.isShown) vb.spTheme else vb.scWebViewAlgorithmicDarkeningWithDarkUiMode
+
+    private fun initSwitchFocusStyles() {
+        val density = resources.displayMetrics.density
+        val switches = listOf(vb.scWebViewAlgorithmicDarkeningWithDarkUiMode,
+            vb.scAllowAutoplayMedia, vb.scWebEngineDebug, vb.scKeepScreenOn,
+            vb.scNavigateWithJoystickAxes)
+        for (toggle in switches) {
+            val row = toggle.parent as View
+            row.setBackgroundResource(R.drawable.settings_switch_row_background)
+            row.minimumHeight = (52 * density).toInt()
+            row.setPadding((12 * density).toInt(), (8 * density).toInt(),
+                (12 * density).toInt(), (8 * density).toInt())
+            toggle.isFocusableInTouchMode = true
+            toggle.onFocusChangeListener = OnFocusChangeListener { _, focused ->
+                row.isSelected = focused
+                if (focused) row.post {
+                    if (toggle.hasFocus()) {
+                        row.requestRectangleOnScreen(Rect(0, 0, row.width, row.height), false)
+                    }
+                }
+            }
+        }
+        vb.llAdblock.setBackgroundResource(R.drawable.settings_switch_row_background)
+        vb.llAdblock.minimumHeight = (52 * density).toInt()
+        vb.llAdblock.setPadding((12 * density).toInt(), (8 * density).toInt(),
+            (12 * density).toInt(), (8 * density).toInt())
+        vb.scAdblock.isFocusable = false
+        vb.scAdblock.isClickable = false
+    }
+
     private fun initWebBrowserEngineSettingsUI() {
         if (WebEngineFactory.getProviders().size == 1) {
             vb.llWebEngine.visibility = View.GONE
             return
         }
 
-        val adapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, Config.SupportedWebEngines)
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        val adapter = ArrayAdapter(context, R.layout.browser_spinner_item, Config.SupportedWebEngines)
+        adapter.setDropDownViewResource(R.layout.browser_spinner_dropdown_item)
 
         vb.spWebEngine.adapter = adapter
 
@@ -137,8 +202,8 @@ class MainSettingsView @JvmOverloads constructor(
     }
 
     private fun initThemeSettingsUI() {
-        val adapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, context.resources.getStringArray(R.array.themes))
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        val adapter = ArrayAdapter(context, R.layout.browser_spinner_item, context.resources.getStringArray(R.array.themes))
+        adapter.setDropDownViewResource(R.layout.browser_spinner_dropdown_item)
 
         vb.spTheme.adapter = adapter
 
@@ -284,7 +349,7 @@ class MainSettingsView @JvmOverloads constructor(
 
     private fun initUAStringConfigUI(context: Context) {
         if (config.userAgentString.value?.contains("TV Bro/1.0 ") == true) {//legacy ua string - now default one should be used
-            config.userAgentString.value = null
+            config.userAgentString.value = Config.DEFAULT_USER_AGENT
         }
         val selected = if (config.userAgentString.value == null) {
             0
@@ -292,22 +357,23 @@ class MainSettingsView @JvmOverloads constructor(
             settingsModel.uaStrings.indexOf(config.userAgentString.value ?: "")
         }
 
-        val adapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, settingsModel.userAgentStringTitles)
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        val userAgentStringTitles = context.resources.getStringArray(R.array.user_agent_titles)
+        val adapter = ArrayAdapter(context, R.layout.browser_spinner_item, userAgentStringTitles)
+        adapter.setDropDownViewResource(R.layout.browser_spinner_dropdown_item)
         vb.spTitles.adapter = adapter
 
         if (selected != -1) {
             vb.spTitles.setSelection(selected, false)
             vb.etUAString.setText(settingsModel.uaStrings[selected])
         } else {
-            vb.spTitles.setSelection(settingsModel.userAgentStringTitles.size - 1, false)
+            vb.spTitles.setSelection(userAgentStringTitles.size - 1, false)
             vb.llUAString.visibility = View.VISIBLE
             vb.etUAString.setText(config.userAgentString.value ?: "")
             vb.etUAString.requestFocus()
         }
         vb.spTitles.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View, position: Int, id: Long) {
-                if (position == settingsModel.userAgentStringTitles.size - 1 && vb.llUAString.visibility == View.GONE) {
+                if (position == userAgentStringTitles.size - 1 && vb.llUAString.visibility == View.GONE) {
                     vb.llUAString.visibility = View.VISIBLE
                     vb.llUAString.startAnimation(AnimationUtils.loadAnimation(context, android.R.anim.fade_in))
                     vb.etUAString.requestFocus()
@@ -327,8 +393,9 @@ class MainSettingsView @JvmOverloads constructor(
             selected = Config.SearchEnginesURLs.indexOf(config.searchEngineURL.value)
         }
 
-        val adapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, Config.SearchEnginesTitles)
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        val searchEngineTitles = context.resources.getStringArray(R.array.search_engine_titles)
+        val adapter = ArrayAdapter(context, R.layout.browser_spinner_item, searchEngineTitles)
+        adapter.setDropDownViewResource(R.layout.browser_spinner_dropdown_item)
 
         vb.spEngine.adapter = adapter
 
@@ -336,14 +403,14 @@ class MainSettingsView @JvmOverloads constructor(
             vb.spEngine.setSelection(selected)
             vb.etUrl.setText(Config.SearchEnginesURLs[selected])
         } else {
-            vb.spEngine.setSelection(Config.SearchEnginesTitles.size - 1)
+            vb.spEngine.setSelection(searchEngineTitles.size - 1)
             vb.llURL.visibility = View.VISIBLE
             vb.etUrl.setText(config.searchEngineURL.value)
             vb.etUrl.requestFocus()
         }
         vb.spEngine.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View, position: Int, id: Long) {
-                if (position == (Config.SearchEnginesTitles.size - 1)) {
+                if (position == searchEngineTitles.size - 1) {
                     if (vb.llURL.visibility == View.GONE) {
                         vb.llURL.visibility = View.VISIBLE
                         vb.llURL.startAnimation(
@@ -362,8 +429,8 @@ class MainSettingsView @JvmOverloads constructor(
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
 
-        val homePageSpinnerAdapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, context.resources.getStringArray(R.array.home_page_modes))
-        homePageSpinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        val homePageSpinnerAdapter = ArrayAdapter(context, R.layout.browser_spinner_item, context.resources.getStringArray(R.array.home_page_modes))
+        homePageSpinnerAdapter.setDropDownViewResource(R.layout.browser_spinner_dropdown_item)
         vb.spHomePage.adapter = homePageSpinnerAdapter
         vb.spHomePage.setSelection(settingsModel.homePageMode.ordinal)
 
@@ -371,18 +438,16 @@ class MainSettingsView @JvmOverloads constructor(
             override fun onItemSelected(parent: AdapterView<*>, view: View, position: Int, id: Long) {
                 val homePageMode = Config.HomePageMode.entries[position]
                 vb.llCustomHomePage.visibility = if (homePageMode == Config.HomePageMode.CUSTOM) View.VISIBLE else View.GONE
-                vb.llHomePageLinksMode.visibility = if (homePageMode == Config.HomePageMode.HOME_PAGE) View.VISIBLE else View.GONE
             }
 
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
 
-        val homePageLinksSpinnerAdapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, context.resources.getStringArray(R.array.home_page_links_modes))
-        homePageLinksSpinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        vb.spHomePageLinks.adapter = homePageLinksSpinnerAdapter
-        vb.spHomePageLinks.setSelection(settingsModel.homePageLinksMode.ordinal)
-
         vb.etCustomHomePageUrl.setText(settingsModel.homePage)
+    }
+
+    fun focusFirstOption() {
+        (if (vb.llWebEngine.visibility == View.VISIBLE) vb.spWebEngine else vb.spEngine).requestFocus()
     }
 
     fun save() {
@@ -391,11 +456,10 @@ class MainSettingsView @JvmOverloads constructor(
 
         val homePageMode = Config.HomePageMode.entries[vb.spHomePage.selectedItemPosition]
         val customHomePageURL = vb.etCustomHomePageUrl.text.toString()
-        val homePageLinksMode = Config.HomePageLinksMode.entries[vb.spHomePageLinks.selectedItemPosition]
-        settingsModel.setHomePageProperties(homePageMode, customHomePageURL, homePageLinksMode)
+        settingsModel.setHomePageProperties(homePageMode, customHomePageURL)
 
         val userAgent = vb.etUAString.text.toString().trim(' ')
-        config.userAgentString.value = userAgent.ifEmpty { null }
+        config.userAgentString.value = userAgent.ifEmpty { Config.DEFAULT_USER_AGENT }
         saveAdBlockListUrl()
     }
 }

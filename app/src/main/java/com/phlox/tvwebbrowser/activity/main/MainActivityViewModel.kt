@@ -21,11 +21,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.json.JSONArray
-import org.json.JSONObject
 import java.io.File
 import java.net.URL
-import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
@@ -86,6 +83,27 @@ class MainActivityViewModel: ActiveModel() {
     private suspend fun loadHomePageLinks() {
         Log.d(TAG, "loadHomePageLinks")
         val config = AppContext.provideConfig()
+        if (!config.homeVideoCardsLoaded) {
+            val favoritesDao = AppDatabase.db.favoritesDao()
+            favoritesDao.getHomePageBookmarks().forEach { favoritesDao.delete(it) }
+            listOf(
+                "腾讯视频" to "https://v.qq.com/",
+                "爱奇艺" to "https://www.iqiyi.com/",
+                "优酷" to "https://www.youku.com/",
+                "芒果TV" to "https://www.mgtv.com/",
+                "哔哩哔哩" to "https://www.bilibili.com/",
+                "虎牙" to "https://www.huya.com/",
+                "斗鱼" to "https://www.douyu.com/"
+            ).forEachIndexed { index, (title, url) ->
+                favoritesDao.insert(FavoriteItem().apply {
+                    this.title = title
+                    this.url = url
+                    order = index
+                    homePageBookmark = true
+                })
+            }
+            config.homeVideoCardsLoaded = true
+        }
         if (config.homePageMode == Config.HomePageMode.HOME_PAGE) {
             when (config.homePageLinksMode) {
                 Config.HomePageLinksMode.MOST_VISITED -> {
@@ -99,65 +117,8 @@ class MainActivityViewModel: ActiveModel() {
                             .map { HomePageLink.fromHistoryItem(it) })
                 }
                 Config.HomePageLinksMode.BOOKMARKS -> {
-                    val favorites = ArrayList<FavoriteItem>()
-                    favorites.addAll(AppDatabase.db.favoritesDao().getHomePageBookmarks())
-                    if ((favorites.isEmpty() && !config.initialBookmarksSuggestionsLoaded)) {
-                        //There was loading of default bookmarks from app's home page (with affiliate links).
-                        // Now its just hardcoded. I left them as json array just for convenience to copy the same
-                        // data used in corresponding home html page where them useful for debug
-                        val suggestions =
-                            try {
-                                val jsonArray = JSONArray("""[
-        {"title": "Wikipedia - the free encyclopedia", "url":"https://www.wikipedia.org", "favicon": "https://ru.wikipedia.org/static/apple-touch/wikipedia.png"},
-        {"title": "Reddit - Dive into anything", "url":"https://www.reddit.com", "favicon": "https://www.redditstatic.com/desktop2x/img/favicon/apple-icon-120x120.png"},
-        {"title": "My Tuner", "url":"https://mytuner-radio.com/", "favicon": "https://static2.mytuner.mobi/static/icons/apple-touch-icon-120x120-precomposed.png"},
-        {"title": "Instagram", "url":"https://www.instagram.com", "favicon": "https://static.cdninstagram.com/rsrc.php/v3/ys/r/aM-g435MtEX.png"},
-        {"title": "IMDb", "url":"https://www.imdb.com/", "favicon": "https://m.media-amazon.com/images/G/01/imdb/images-ANDW73HA/favicon_iPhone_retina_180x180._CB1582158069_UX60_.png"},
-        {"title": "eBay", "url":"https://www.ebay.com/", "favicon": "https://www.ebay.com/apple-touch-icon.png"},
-        {"title": "Itch.io", "url":"https://itch.io/games/input-gamepad/platform-web", "favicon": "https://itch.io/static/images/itchio-square-144.png"},
-        {"title": "BBC News", "url":"https://www.bbc.com/news", "favicon": "https://www.bbc.com/apple-touch-icon-120x120-precomposed.png"}
-    ]""")
-                                val result = mutableListOf<FavoriteItem>()
-                                val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-                                for (i in 0 until jsonArray.length()) {
-                                    val jsonObject = jsonArray.getJSONObject(i)
-                                    val title = jsonObject.getString("title")
-                                    val url = jsonObject.getString("url")
-                                    val favicon = jsonObject.opt("favicon") as String?
-                                    val destUrl = jsonObject.opt("dest_url") as String?
-                                    val description = jsonObject.opt("description") as String?
-                                    val validUntil = jsonObject.opt("valid_until") as String?
-                                    val favorite = FavoriteItem()
-                                    favorite.title = title
-                                    favorite.url = url
-                                    favorite.favicon = favicon
-                                    favorite.destUrl = destUrl
-                                    favorite.description = description
-                                    favorite.order = i
-                                    favorite.homePageBookmark = true
-                                    if (validUntil != null) {
-                                        favorite.validUntil = dateFormat.parse(validUntil)
-                                    }
-                                    result.add(favorite)
-                                }
-                                result
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                                null
-                            }
-
-
-                        if (suggestions != null) {
-                            for (s in suggestions) {
-                                s.id = AppDatabase.db.favoritesDao().insert(s)
-                            }
-                            config.initialBookmarksSuggestionsLoaded = true
-
-                            homePageLinks.replaceAll(suggestions.map { HomePageLink.fromBookmarkItem(it) })
-                        }
-                    } else {
-                        homePageLinks.replaceAll(favorites.map { HomePageLink.fromBookmarkItem(it) })
-                    }
+                    homePageLinks.replaceAll(AppDatabase.db.favoritesDao().getHomePageBookmarks()
+                        .map { HomePageLink.fromBookmarkItem(it) })
                 }
             }
         }
@@ -295,10 +256,24 @@ class MainActivityViewModel: ActiveModel() {
     }
 
     fun removeHomePageLink(bookmark: HomePageLink) = modelScope.launch {
-        homePageLinks.remove(bookmark)
         bookmark.favoriteId?.let {
-            AppDatabase.db.favoritesDao().delete(it)
+            val dao = AppDatabase.db.favoritesDao()
+            dao.delete(it)
+            val items = dao.getHomePageBookmarks()
+            dao.saveHomePageOrder(items)
+            homePageLinks.replaceAll(items.map { item -> HomePageLink.fromBookmarkItem(item) })
         }
+    }
+
+    fun moveHomePageLink(bookmark: HomePageLink, direction: Int) = modelScope.launch {
+        val dao = AppDatabase.db.favoritesDao()
+        val items = dao.getHomePageBookmarks().toMutableList()
+        val index = items.indexOfFirst { it.id == bookmark.favoriteId }
+        val destination = index + direction
+        if (index < 0 || destination !in items.indices) return@launch
+        java.util.Collections.swap(items, index, destination)
+        dao.saveHomePageOrder(items)
+        homePageLinks.replaceAll(items.map { HomePageLink.fromBookmarkItem(it) })
     }
 
     fun onHomePageLinkEdited(item: FavoriteItem) = modelScope.launch {

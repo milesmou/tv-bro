@@ -7,8 +7,8 @@ function postMessageToHomePagePort(action, data) {
 }
 
 let TVBro = {
-    startVoiceSearch: function () {
-        postMessageToHomePagePort("startVoiceSearch");
+    openHomeAction: function (action) {
+        postMessageToHomePagePort("openHomeAction", action);
     },
     setSearchEngine: function (engine, customSearchEngineURL) {
         postMessageToHomePagePort("setSearchEngine", { engine: engine, customSearchEngineURL: customSearchEngineURL });

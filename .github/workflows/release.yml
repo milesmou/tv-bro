@@ -1,66 +1,136 @@
-name: Release
+name: 发布浏览器
 
 on:
+  push:
+    tags: ['v*']
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version (e.g. 1.2.3)'
+        description: '版本号，必须与应用版本一致（例如 1.0.0）'
         required: true
+        type: string
       prerelease:
-        description: 'Release type'
-        required: true
-        default: 'release'
-        type: choice
-        options:
-          - release
-          - pre-release
+        description: '发布为预览版'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: browser-release-${{ github.event_name == 'push' && github.ref_name || inputs.version }}
+  cancel-in-progress: false
 
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 校验版本与包名
+        id: metadata
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+        run: python3 scripts/release_metadata.py --github-output "$GITHUB_OUTPUT"
+
+      - name: 检查签名配置
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          for name in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::缺少 GitHub Actions Secret：$name"
+              exit 1
+            fi
+          done
+          umask 077
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/browser-release.jks"
 
       - uses: actions/setup-java@v4
         with:
+          distribution: temurin
           java-version: '21'
-          distribution: 'temurin'
 
-      - name: Decode keystore
-        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > keystore.jks
-
-      - name: Build GeckoIncluded
-        run: ./gradlew assembleGenericGeckoIncludedRelease -PenableAbiSplits
-        env:
-          KEYSTORE_PATH: ${{ github.workspace }}/keystore.jks
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-
-      - name: Build GeckoExcluded
-        run: ./gradlew assembleGenericGeckoExcludedRelease
-        env:
-          KEYSTORE_PATH: ${{ github.workspace }}/keystore.jks
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-
-      - name: Rename artifacts
-        run: |
-          for dir in genericGeckoIncluded genericGeckoExcluded; do
-            for f in app/build/outputs/apk/${dir}/release/app-*.apk; do
-              new="${f/app-/tvbro-${{ inputs.version }}-}"
-              mv "$f" "${new/-release.apk/.apk}"
-            done
-          done
-
-      - name: Create release
-        uses: softprops/action-gh-release@v2
+      - uses: android-actions/setup-android@v3
         with:
-          tag_name: v${{ inputs.version }}
-          name: v${{ inputs.version }}
-          body_path: RELEASE_NOTES.md
-          prerelease: ${{ inputs.prerelease == 'pre-release' }}
-          files: |
-            app/build/outputs/apk/genericGeckoIncluded/release/*.apk
-            app/build/outputs/apk/genericGeckoExcluded/release/*.apk
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: 测试并构建正式 APK
+        env:
+          KEYSTORE_PATH: ${{ runner.temp }}/browser-release.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:testGenericGeckoExcludedDebugUnitTest :app:assembleGenericGeckoExcludedRelease --no-daemon
+
+      - name: 校验 APK 并生成校验和
+        env:
+          VERSION: ${{ steps.metadata.outputs.version }}
+          VERSION_CODE: ${{ steps.metadata.outputs.versionCode }}
+        run: |
+          mkdir -p dist
+          apk="dist/browser-${VERSION}-webview.apk"
+          cp app/build/outputs/apk/genericGeckoExcluded/release/app-generic-geckoExcluded-release.apk "$apk"
+          tools="$ANDROID_HOME/build-tools/36.0.0"
+          "$tools/apksigner" verify --verbose --print-certs "$apk"
+          "$tools/aapt" dump badging "$apk" > dist/apk-metadata.txt
+          grep -F "package: name='com.milesmou.tvbrowser' versionCode='${VERSION_CODE}' versionName='${VERSION}'" dist/apk-metadata.txt
+          grep -F "versionName='${VERSION}'" dist/apk-metadata.txt
+          if grep -q 'application-debuggable' dist/apk-metadata.txt; then
+            echo '::error::禁止发布可调试 APK'
+            exit 1
+          fi
+          cd dist
+          sha256sum *.apk > SHA256SUMS.txt
+
+      - name: 保存构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-${{ steps.metadata.outputs.version }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: 发布 GitHub Release
+        env:
+          RELEASE_TAG: ${{ steps.metadata.outputs.tag }}
+          VERSION: ${{ steps.metadata.outputs.version }}
+          PRERELEASE: ${{ inputs.prerelease || false }}
+        run: |
+          if git show-ref --verify --quiet "refs/tags/$RELEASE_TAG"; then
+            test "$(git rev-list -n 1 "$RELEASE_TAG")" = "$GITHUB_SHA"
+          else
+            git tag "$RELEASE_TAG" "$GITHUB_SHA"
+            git push origin "refs/tags/$RELEASE_TAG"
+          fi
+          if existing=$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft 2>/dev/null); then
+            if [ "$existing" != 'true' ]; then
+              echo '::error::该版本已公开发布，禁止覆盖'
+              exit 1
+            fi
+            gh release edit "$RELEASE_TAG" --title "浏览器 ${VERSION}" --notes-file RELEASE_NOTES.md
+            gh release upload "$RELEASE_TAG" dist/*.apk dist/SHA256SUMS.txt --clobber
+          else
+            gh release create "$RELEASE_TAG" dist/*.apk dist/SHA256SUMS.txt \
+              --verify-tag --draft --title "浏览器 ${VERSION}" --notes-file RELEASE_NOTES.md
+          fi
+          args=(--draft=false)
+          if [ "$PRERELEASE" = 'true' ]; then args+=(--prerelease --latest=false); else args+=(--prerelease=false --latest); fi
+          gh release edit "$RELEASE_TAG" "${args[@]}"
+
+      - name: 清理临时签名文件
+        if: always()
+        run: rm -f "$RUNNER_TEMP/browser-release.jks"

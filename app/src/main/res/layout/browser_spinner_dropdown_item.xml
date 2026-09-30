@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheckedTextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/text1"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="48dp"
+    android:gravity="center_vertical"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:textSize="18sp"
+    android:textColor="@color/day_night_text_color_contrast"
+    android:background="@drawable/browser_dropdown_row"
+    android:singleLine="true"
+    android:ellipsize="end" />

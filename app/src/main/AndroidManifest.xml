@@ -54,10 +54,6 @@
             <data android:scheme="http" />
         </intent>
         <intent>
-            <action
-                android:name="android.speech.RecognitionService" />
-        </intent>
-        <intent>
             <action android:name="android.intent.action.MAIN" />
         </intent>
     </queries>
@@ -65,8 +61,9 @@
     <application
         android:name=".TVBro"
         android:allowBackup="true"
+        android:roundIcon="@mipmap/ic_browser_launcher"
         android:hardwareAccelerated="true"
-        android:icon="@drawable/ic_launcher"
+        android:icon="@mipmap/ic_browser_launcher"
         android:label="@string/app_name"
         android:largeHeap="true"
         android:supportsRtl="true"
@@ -77,13 +74,13 @@
         tools:ignore="DiscouragedApi" >
         <activity
             android:name=".activity.main.MainActivity"
-            android:banner="@drawable/banner"
-            android:icon="@drawable/ic_launcher"
+            android:banner="@drawable/browser_banner"
+            android:icon="@mipmap/ic_browser_launcher"
             android:label="@string/app_name_short"
             android:launchMode="singleTask"
             android:configChanges="uiMode|keyboard|keyboardHidden|navigation"
             android:screenOrientation="sensorLandscape"
-            android:logo="@drawable/banner"
+            android:logo="@drawable/browser_banner"
             android:exported="true"
             tools:ignore="DiscouragedApi">
             <intent-filter>
@@ -122,7 +119,7 @@
         <activity android:name=".activity.IncognitoModeMainActivity"
             android:process=":incognito"
             android:exported="false"
-            android:icon="@drawable/ic_launcher"
+            android:icon="@mipmap/ic_browser_launcher"
             android:label="@string/app_name_short"
             android:screenOrientation="sensorLandscape"
             android:launchMode="singleTask"

@@ -3,21 +3,33 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:minWidth="400dp"
+    android:padding="24dp"
     android:gravity="center_horizontal">
 
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="20dp">
 
-        <Button
+        <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/bookmarks"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:textColor="@color/day_night_text_color_contrast" />
+
+        <Button
+            android:layout_width="104dp"
+            android:layout_height="48dp"
             android:background="@drawable/button_bg_selector"
             android:text="@string/add"
             android:id="@+id/btnAdd"
-            android:layout_weight="1"
+            android:textColor="@color/day_night_text_color_contrast"
+            android:nextFocusDown="@+id/listView"
             android:textSize="18sp"
             android:lines="1"
             android:layout_marginEnd="10dp"
@@ -27,12 +39,13 @@
             app:autoSizeStepGranularity="1sp"/>
 
         <Button
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_width="104dp"
+            android:layout_height="48dp"
             android:background="@drawable/button_bg_selector"
             android:text="@string/edit"
             android:id="@+id/btnEdit"
-            android:layout_weight="1"
+            android:textColor="@color/day_night_text_color_contrast"
+            android:nextFocusDown="@+id/listView"
             android:textSize="18sp"
             android:lines="1"
             android:layout_marginStart="10dp"
@@ -48,8 +61,11 @@
         android:id="@+id/pbLoading" />
 
     <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:textColor="@color/day_night_text_color"
         android:text="@string/no_bookmarks_yet"
         android:id="@+id/tvPlaceholder"
         android:textSize="20sp"
@@ -58,7 +74,13 @@
 
     <ListView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:listSelector="@drawable/list_item_bg_selector"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:divider="@android:color/transparent"
+        android:dividerHeight="8dp"
+        android:listSelector="@android:color/transparent"
+        android:padding="3dp"
+        android:clipToPadding="false"
+        android:nextFocusUp="@+id/btnAdd"
         android:id="@+id/listView" />
 </LinearLayout>

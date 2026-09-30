@@ -29,6 +29,31 @@ class TabsModel : ActiveModel() {
     val tabsStates = ObservableList<WebTabState>()
     private val config = AppContext.provideConfig()
     private var incognitoMode = config.incognitoMode
+    private var lastOpenedTab: WebTabState? = null
+
+    fun registerOpenedTab(tab: WebTabState) {
+        lastOpenedTab = tab
+    }
+
+    suspend fun retainLastOpenedTab() {
+        val keep = lastOpenedTab?.takeIf { candidate -> tabsStates.any { it === candidate } }
+            ?: tabsStates.maxByOrNull { it.id } ?: return
+        saveTab(keep)
+        val others = tabsStates.filter { it !== keep }
+        val dao = AppDatabase.db.tabsDao()
+        others.forEach {
+            dao.delete(it)
+            it.webEngine.onDetachFromWindow(completely = true, destroyTab = true)
+            if (it.wvStateFileName == keep.wvStateFileName) it.wvStateFileName = null
+            if (it.thumbnailHash == keep.thumbnailHash) it.thumbnailHash = null
+            withContext(Dispatchers.IO) { it.removeFiles() }
+        }
+        keep.selected = true
+        keep.position = 0
+        dao.update(keep)
+        tabsStates.replaceAll(listOf(keep))
+        lastOpenedTab = keep
+    }
 
     init {
         tabsStates.subscribe({
@@ -61,7 +86,22 @@ class TabsModel : ActiveModel() {
             }
         }
         val tabsDao = AppDatabase.db.tabsDao()
-        tabsStates.replaceAll(tabsDao.getAll(config.incognitoMode))
+        val savedTabs = tabsDao.getAll(config.incognitoMode)
+        // Also trim a session left behind by an OS process termination.
+        val keep = savedTabs.maxByOrNull { it.id }
+        savedTabs.filter { it !== keep }.forEach { tab ->
+            tabsDao.delete(tab)
+            if (tab.wvStateFileName == keep?.wvStateFileName) tab.wvStateFileName = null
+            if (tab.thumbnailHash == keep?.thumbnailHash) tab.thumbnailHash = null
+            withContext(Dispatchers.IO) { tab.removeFiles() }
+        }
+        keep?.let {
+            it.selected = true
+            it.position = 0
+            tabsDao.update(it)
+        }
+        tabsStates.replaceAll(listOfNotNull(keep))
+        lastOpenedTab = keep
         loaded = true
     }
 

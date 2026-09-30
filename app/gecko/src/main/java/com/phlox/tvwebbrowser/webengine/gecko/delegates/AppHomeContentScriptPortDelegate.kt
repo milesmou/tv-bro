@@ -7,7 +7,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.phlox.tvwebbrowser.AppContext
 import com.phlox.tvwebbrowser.singleton.FaviconsPool
-import com.phlox.tvwebbrowser.utils.Utils
 import com.phlox.tvwebbrowser.webengine.gecko.GeckoWebEngine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -22,9 +21,10 @@ class AppHomeContentScriptPortDelegate(val port: WebExtension.Port, val webEngin
         try {
             val msgJson = message as JSONObject
             when (msgJson.getString("action")) {
-                "startVoiceSearch" -> {
-                    webEngine.callback?.getActivity()?.runOnUiThread {
-                        webEngine.callback?.initiateVoiceSearch()
+                "openHomeAction" -> {
+                    val callback = webEngine.callback ?: return
+                    callback.getActivity().runOnUiThread {
+                        callback.onHomePageAction(msgJson.getString("data"))
                     }
                 }
                 "onHomePageLoaded" -> {
@@ -36,9 +36,6 @@ class AppHomeContentScriptPortDelegate(val port: WebExtension.Port, val webEngin
                     }
                     var links = jsArr.toString()
                     links = links.replace("'", "\\'")
-                    if (Utils.isFireTV(AppContext.get())) {
-                        webEngine.evaluateJavascript("hideVoiceSearchUI()")
-                    }
                     webEngine.evaluateJavascript("renderLinks('${cfg.homePageLinksMode.name}', $links)")
                     webEngine.evaluateJavascript(
                         "applySearchEngine(\"${cfg.guessSearchEngineName()}\", \"${cfg.searchEngineURL.value}\")")

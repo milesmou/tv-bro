@@ -21,11 +21,12 @@
             android:textSize="16sp"
             />
 
-        <Spinner
+        <com.phlox.tvwebbrowser.activity.main.dialogs.settings.RemoteOptionPicker
             android:id="@+id/spWebEngine"
+        android:nextFocusUp="@id/btnMainTab"
+        android:prompt="@string/web_browser_engine_temporary_setting"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:dropDownWidth="300dp"
             />
     </LinearLayout>
 
@@ -37,11 +38,12 @@
         android:layout_marginTop="20dp"
         />
 
-    <Spinner
+    <com.phlox.tvwebbrowser.activity.main.dialogs.settings.RemoteOptionPicker
         android:id="@+id/spEngine"
+        android:nextFocusUp="@id/btnMainTab"
+        android:prompt="@string/choose_default_search_engine"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:dropDownWidth="300dp"
         />
 
     <LinearLayout
@@ -79,11 +81,11 @@
         android:textSize="16sp"
         />
 
-    <Spinner
+    <com.phlox.tvwebbrowser.activity.main.dialogs.settings.RemoteOptionPicker
         android:id="@+id/spHomePage"
+        android:prompt="@string/home_page"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:dropDownWidth="300dp"
         />
 
     <LinearLayout
@@ -114,30 +116,7 @@
             />
     </LinearLayout>
 
-    <LinearLayout
-        android:id="@+id/llHomePageLinksMode"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:layout_marginTop="20dp"
-        android:visibility="gone"
-        >
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
-            android:text="@string/home_page_links"
-            android:textSize="16sp"
-            />
-
-        <Spinner
-            android:id="@+id/spHomePageLinks"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:dropDownWidth="300dp"
-            />
-    </LinearLayout>
 
     <TextView
         android:layout_width="match_parent"
@@ -147,11 +126,11 @@
         android:layout_marginTop="20dp"
         />
 
-    <Spinner
+    <com.phlox.tvwebbrowser.activity.main.dialogs.settings.RemoteOptionPicker
         android:id="@+id/spTitles"
+        android:prompt="@string/choose_user_agent_string"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:dropDownWidth="300dp"
         />
 
     <LinearLayout
@@ -241,20 +220,27 @@
           android:lines="1"
           tools:text="Last update: never"
           />
-      <ImageButton
+      <androidx.appcompat.widget.AppCompatImageButton
           android:id="@+id/btnAdBlockerUpdate"
-          android:layout_width="48dp"
-          android:layout_height="48dp"
+          android:layout_width="52dp"
+          android:layout_height="52dp"
+          android:layout_marginStart="12dp"
           android:layout_weight="0"
+          android:background="@drawable/settings_action_background"
+          android:padding="12dp"
+          android:scaleType="fitCenter"
+          android:focusable="true"
+          android:focusableInTouchMode="true"
           android:contentDescription="@string/update_ad_blocker_list"
           android:nextFocusDown="@+id/spTheme"
-          android:src="@drawable/ic_refresh_grey_900_24dp"
+          android:src="@drawable/ic_rules_refresh"
           />
       <ProgressBar
           android:id="@+id/pbAdBlockerListLoading"
           style="?android:attr/progressBarStyle"
-          android:layout_width="48dp"
-          android:layout_height="48dp"
+          android:layout_width="52dp"
+          android:layout_height="52dp"
+          android:layout_marginStart="12dp"
           android:layout_weight="0"
           android:visibility="gone"
           />
@@ -276,11 +262,11 @@
         android:textSize="16sp"
         />
 
-    <Spinner
+    <com.phlox.tvwebbrowser.activity.main.dialogs.settings.RemoteOptionPicker
         android:id="@+id/spTheme"
+        android:prompt="@string/theme"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:dropDownWidth="300dp"
         android:nextFocusDown="@+id/scWebViewAlgorithmicDarkeningWithDarkUiMode"
         />
   </LinearLayout>
@@ -477,11 +463,22 @@
         tools:text="100%"
         />
   </LinearLayout>
-  <Button
+  <androidx.appcompat.widget.AppCompatButton
       android:id="@+id/btnClearWebCache"
       android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:layout_marginTop="10dp"
+      android:layout_height="52dp"
+      android:layout_marginTop="20dp"
+      android:background="@drawable/settings_action_background"
+      android:backgroundTint="@null"
+      android:minWidth="168dp"
+      android:paddingStart="20dp"
+      android:paddingEnd="20dp"
+      android:gravity="center"
+      android:textColor="@color/day_night_text_color_contrast"
+      android:textSize="18sp"
+      android:textAllCaps="false"
+      android:focusable="true"
+      android:focusableInTouchMode="true"
       android:nextFocusUp="@+id/sbCursorAcceleration"
       android:text="@string/clear_web_cache" />
   <View

@@ -76,9 +76,6 @@ class ShortcutMgr private constructor() {
             Shortcut.REFRESH_PAGE -> {
                 mainActivity.refresh()
             }
-            Shortcut.VOICE_SEARCH -> {
-                mainActivity.initiateVoiceSearch()
-            }
             Shortcut.PLAY_PAUSE -> {
                 webEngine?.togglePlayback()
             }

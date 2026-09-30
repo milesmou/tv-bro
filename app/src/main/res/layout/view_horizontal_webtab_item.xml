@@ -2,21 +2,22 @@
 <com.phlox.tvwebbrowser.widgets.CheckableContainer xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="@dimen/web_tab_width"
-    android:layout_height="wrap_content"
+    android:layout_height="@dimen/browser_menu_row_height"
     android:focusable="true"
     android:focusableInTouchMode="true"
-    android:nextFocusUp="@+id/ibMenu"
-    android:nextFocusDown="@+id/ibCloseTab"
+    android:nextFocusUp="@+id/ibHome"
+    android:layout_marginEnd="8dp"
     android:paddingStart="@dimen/web_tab_padding"
     android:paddingEnd="@dimen/web_tab_padding"
     android:background="@drawable/webtab_horizontal_bkg_selector">
     <ImageView
         android:id="@+id/ivFavicon"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        tools:src="@drawable/ic_launcher"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        tools:src="@mipmap/ic_browser_launcher"
         android:scaleType="fitCenter"
-        android:layout_margin="5dp" />
+        android:layout_marginVertical="8dp"
+        android:layout_centerVertical="true" />
     <TextView
         android:id="@+id/tvTitle"
         android:layout_width="match_parent"
@@ -25,7 +26,7 @@
         android:duplicateParentState="true"
         android:textColor="@color/webtab_horizontal_text_selector"
         tools:text="@string/app_name"
-        android:textSize="20sp"
+        android:textSize="16sp"
         android:gravity="center_vertical"
         android:layout_marginStart="3dp"
         android:lines="1"

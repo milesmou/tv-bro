@@ -5,6 +5,7 @@ import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.KeyEvent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DiffUtil
@@ -79,7 +80,7 @@ class TabsAdapter(private val tabsView: TabsView) : RecyclerView.Adapter<TabView
                 checkedView = vb.root
             }
 
-            vb.ivFavicon.setImageResource(R.drawable.ic_launcher)
+            vb.ivFavicon.setImageResource(R.mipmap.ic_browser_launcher)
 
             val url = tabState.url
             if (url != Config.HOME_PAGE_URL && url != Config.HOME_URL_ALIAS) {
@@ -92,7 +93,7 @@ class TabsAdapter(private val tabsView: TabsView) : RecyclerView.Adapter<TabView
                     favicon?.let {
                         vb.ivFavicon.setImageBitmap(it)
                     } ?: run {
-                        vb.ivFavicon.setImageResource(R.drawable.ic_launcher)
+                        vb.ivFavicon.setImageResource(R.mipmap.ic_browser_launcher)
                     }
                 }
             }
@@ -111,6 +112,13 @@ class TabsAdapter(private val tabsView: TabsView) : RecyclerView.Adapter<TabView
 
             vb.root.setOnClickListener {
                 listener?.onTitleSelected(tabState.position)
+            }
+
+            vb.root.setOnKeyListener { _, keyCode, event ->
+                if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+                    if (event.action == KeyEvent.ACTION_UP) listener?.onTitleSelected(tabState.position)
+                    true
+                } else false
             }
 
             vb.root.setOnLongClickListener {

@@ -32,8 +32,9 @@ object SearchEngineConfigDialogFactory {
         val etUrl = view.findViewById(R.id.etUrl) as EditText
         val llUrl = view.findViewById(R.id.llURL) as LinearLayout
 
-        val adapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, Config.SearchEnginesTitles)
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        val searchEngineTitles = context.resources.getStringArray(R.array.search_engine_titles)
+        val adapter = ArrayAdapter(context, R.layout.browser_spinner_item, searchEngineTitles)
+        adapter.setDropDownViewResource(R.layout.browser_spinner_dropdown_item)
 
         val spEngine = view.findViewById(R.id.spEngine) as Spinner
         spEngine.adapter = adapter
@@ -42,14 +43,14 @@ object SearchEngineConfigDialogFactory {
             spEngine.setSelection(selected)
             etUrl.setText(Config.SearchEnginesURLs[selected])
         } else {
-            spEngine.setSelection(Config.SearchEnginesTitles.size - 1)
+            spEngine.setSelection(searchEngineTitles.size - 1)
             llUrl.visibility = View.VISIBLE
             etUrl.setText(settings.config.searchEngineURL.value)
             etUrl.requestFocus()
         }
         spEngine.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View, position: Int, id: Long) {
-                if (position == Config.SearchEnginesTitles.size - 1 && llUrl.visibility == View.GONE) {
+                if (position == searchEngineTitles.size - 1 && llUrl.visibility == View.GONE) {
                     llUrl.visibility = View.VISIBLE
                     llUrl.startAnimation(AnimationUtils.loadAnimation(context, android.R.anim.fade_in))
                     etUrl.requestFocus()

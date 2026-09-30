@@ -6,6 +6,7 @@ import com.brave.adblock.AdBlockClient
 import com.brave.adblock.AdBlockClient.FilterOption
 import com.brave.adblock.Utils
 import com.phlox.tvwebbrowser.AppContext
+import com.phlox.tvwebbrowser.R
 import com.phlox.tvwebbrowser.TVBro
 import com.phlox.tvwebbrowser.utils.activemodel.ActiveModel
 import com.phlox.tvwebbrowser.utils.observable.ObservableValue
@@ -61,7 +62,7 @@ class AdblockModel : ActiveModel() {
         this@AdblockModel.client = client
         config.adBlockListLastUpdate = now.timeInMillis
         if (!success) {
-            Toast.makeText(TVBro.instance, "Error loading ad-blocker list", Toast.LENGTH_SHORT).show()
+            Toast.makeText(TVBro.instance, R.string.adblock_list_load_error, Toast.LENGTH_SHORT).show()
         }
         clientLoading.value = false
     }

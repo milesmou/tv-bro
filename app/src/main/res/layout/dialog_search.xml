@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/url_prompt"
+        android:textColor="@color/day_night_text_color_contrast"
+        android:textSize="24sp"
+        android:layout_marginBottom="20dp" />
+
+    <EditText
+        android:id="@+id/etSearch"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="@drawable/browser_search_background"
+        android:hint="@string/url_prompt"
+        android:textColor="@color/day_night_text_color_contrast"
+        android:textColorHint="@color/day_night_text_color"
+        android:textSize="18sp"
+        android:singleLine="true"
+        android:inputType="textUri"
+        android:imeOptions="actionGo"
+        android:nextFocusDown="@id/btnSearch" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="end"
+        android:layout_marginTop="20dp">
+        <Button
+            android:id="@+id/btnCancel"
+            android:layout_width="104dp"
+            android:layout_height="48dp"
+            android:background="@drawable/button_bg_selector"
+            android:text="@string/cancel"
+            android:textColor="@color/day_night_text_color_contrast"
+            android:nextFocusUp="@id/etSearch" />
+        <Button
+            android:id="@+id/btnSearch"
+            android:layout_width="104dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="20dp"
+            android:background="@drawable/button_bg_selector"
+            android:text="@android:string/search_go"
+            android:textColor="@color/day_night_text_color_contrast"
+            android:nextFocusUp="@id/etSearch" />
+    </LinearLayout>
+</LinearLayout>

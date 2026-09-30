@@ -1,12 +1,10 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-  <string name="app_name">TV Bro: Przeglądarka internetowa dla TV</string>
+  <string name="app_name">浏览器</string>
   <string name="error">Błąd</string>
   <string name="ok">OK</string>
   <string name="loading">Wczytywanie…</string>
   <string name="url_prompt">Wpisz zapytanie lub adres URL</string>
-  <string name="can_not_recognize">Nie można rozpoznać</string>
-  <string name="speak">Wyszukaj</string>
   <string name="open_new_tab">Otwórz nową kartę</string>
   <string name="close">Zamknij</string>
   <string name="web_perm_request_confirmation">Ta strona próbuje użyć następujących zasobów:\n\n%s</string>
@@ -55,7 +53,6 @@
   <string name="navigate_back">Nawiguj wstecz</string>
   <string name="navigate_home">Nawiguj na stronę domową</string>
   <string name="refresh_page">Odśwież</string>
-  <string name="voice_search">Wyszukiwanie głosowe</string>
   <string name="zoom_in">Przybliż</string>
   <string name="zoom_out">Oddal</string>
   <string name="not_set">Nie ustawiono</string>
@@ -67,10 +64,9 @@
   <string name="clear">Wyczyść</string>
   <string name="install">Zainstaluj</string>
   <string name="turn_on_unknown_sources">Proszę włączyć ustawienie w systemie \"Instalacja z nieznanych źródeł\"</string>
-  <string name="turn_on_unknown_sources_for_app">Pozwól aplikacji TV Bro na instalację aplikacji z \"Nieznanych źródeł\" w ustawieniach systemu</string>
+  <string name="turn_on_unknown_sources_for_app">Pozwól aplikacji 浏览器 na instalację aplikacji z \"Nieznanych źródeł\" w ustawieniach systemu</string>
   <string name="storage_not_mounted">Nie zamontowano nośnika</string>
   <string name="can_not_create_downloads">Nie mogę stworzyć folderu Pobrane</string>
-  <string name="voice_search_not_found">Nie znaleziono wyszukiwania głosowego</string>
   <string name="new_version_dialog_title">Dostępna nowa wersja!</string>
   <string name="later">Później</string>
   <string name="downloads">Pobrane</string>
@@ -134,7 +130,7 @@
     <item>Mroczny</item>
   </array>
   <string name="incognito_mode">Tryb incognito</string>
-  <string name="incognito_mode_hint">Teraz możesz przeglądać internet prywatnie, a pozostali ludzie którzy używają tego urządzenia nie zobaczą Twojej aktywności. Aplikacja TV Bro nie będzie zapisywać Twojej historii przeglądania, ciasteczek oraz danych stron, informacji dodanych w formularzach.\n\nJednakże, zapisane zostaną pobrane pliki i zakładki. Twoja aktywność będzie nadal widoczna dla stron które odwiedzasz, twojej organizacji oraz dostawcy internetu.</string>
+  <string name="incognito_mode_hint">Teraz możesz przeglądać internet prywatnie, a pozostali ludzie którzy używają tego urządzenia nie zobaczą Twojej aktywności. Aplikacja 浏览器 nie będzie zapisywać Twojej historii przeglądania, ciasteczek oraz danych stron, informacji dodanych w formularzach.\n\nJednakże, zapisane zostaną pobrane pliki i zakładki. Twoja aktywność będzie nadal widoczna dla stron które odwiedzasz, twojej organizacji oraz dostawcy internetu.</string>
   <string name="don_t_show_again">Nie pokazuj ponownie</string>
   <string name="why_icon_changed">Czemu ikona się zmieniła?</string>
   <string name="clear_web_cache">Wyczyść pamięć podręczną</string>
@@ -157,7 +153,7 @@
   <string name="custom_home_page_url">Niestandardowy adres URL strony głównej</string>
   <string name="home_page_links">Linki na stronie głównej</string>
   <string-array name="home_page_modes">
-    <item>Strona główna TV Bro</item>
+    <item>Strona główna 浏览器</item>
     <item>Wyszukiwarka</item>
     <item>Niestandardowa</item>
     <item>Pusta</item>

@@ -36,6 +36,7 @@ class FavoriteItemView @JvmOverloads constructor(context: Context, attrs: Attrib
     }
 
     private fun init() {
+        setBackgroundResource(R.drawable.bookmark_row_background)
         vb = ViewFavoriteItemBinding.inflate(LayoutInflater.from(context), this, true)
 
         vb.ibDelete.setOnClickListener { favorite?.let { listener?.onDeleteClick(it)} }
@@ -48,7 +49,8 @@ class FavoriteItemView @JvmOverloads constructor(context: Context, attrs: Attrib
         vb.ibDelete.visibility = if (editMode) View.VISIBLE else View.GONE
         vb.llContent.isClickable = editMode
         vb.llContent.isFocusable = editMode
-        vb.tvTitle.text = favorite.title
+        vb.llContent.setBackgroundResource(if (editMode) R.drawable.bookmark_row_background else 0)
+        vb.tvTitle.text = favorite.title?.takeIf { it.isNotBlank() } ?: favorite.url
         vb.tvUrl.text = favorite.url
         vb.ivIcon.setImageResource(R.drawable.ic_not_available)
         val url = favorite.url

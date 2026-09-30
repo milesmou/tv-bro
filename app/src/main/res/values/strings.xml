@@ -1,12 +1,10 @@
 <resources>
-    <string name="app_name">TV Bro: TV Web Browser</string>
-    <string name="app_name_short" translatable="false">TV Bro</string>
+    <string name="app_name">浏览器</string>
+    <string name="app_name_short" translatable="false">浏览器</string>
     <string name="error">Error</string>
     <string name="ok">OK</string>
     <string name="loading">Loading&#8230;</string>
     <string name="url_prompt">Input query text or URL</string>
-    <string name="can_not_recognize">Can not recognize</string>
-    <string name="speak">Search query</string>
     <string name="open_new_tab">Open new Tab</string>
     <string name="close">Close</string>
     <string name="web_perm_request_confirmation">This web page wants to use following resources:\n\n%s</string>
@@ -28,6 +26,10 @@
     <string name="search_history">Search history</string>
     <string name="engine">Search Engine</string>
     <string name="choose_default_search_engine">Choose default search engine</string>
+    <string-array name="search_engine_titles">
+        <item>Bing China</item>
+        <item>Custom</item>
+    </string-array>
     <string name="set_search_engine_as_homepage">Set search engine as homepage</string>
     <string name="save">Save</string>
     <string name="search_engine_url_with_query_placeholder_query">Search engine URL with query placeholder [query]</string>
@@ -35,6 +37,13 @@
     <string name="change_user_agent">Change User Agent</string>
     <string name="user_agent_string">User Agent String</string>
     <string name="choose_user_agent_string">Choose User Agent String</string>
+    <string-array name="user_agent_titles">
+        <item>Default</item>
+        <item>Chrome (Desktop)</item>
+        <item>Firefox (Desktop)</item>
+        <item>Edge (Desktop)</item>
+        <item>Custom</item>
+    </string-array>
     <string name="edit_user_agent_string">Edit User Agent String</string>
     <string name="nothing">Nothing</string>
     <string name="cancelled">Cancelled</string>
@@ -56,7 +65,6 @@
     <string name="navigate_back">Navigate back</string>
     <string name="navigate_home">Navigate home</string>
     <string name="refresh_page">Refresh page</string>
-    <string name="voice_search">Voice search</string>
     <string name="zoom_in">Zoom in</string>
     <string name="zoom_out">Zoom out</string>
     <string name="not_set">Not set</string>
@@ -68,17 +76,21 @@
     <string name="clear">Clear</string>
     <string name="install">Install</string>
     <string name="turn_on_unknown_sources">Please turn on \"Unknown sources\" system setting</string>
-    <string name="turn_on_unknown_sources_for_app">Please allow TV Bro to install apps from \"Unknown sources\" in system settings</string>
+    <string name="turn_on_unknown_sources_for_app">Please allow 浏览器 to install apps from \"Unknown sources\" in system settings</string>
     <string name="storage_not_mounted">Storage not mounted</string>
     <string name="can_not_create_downloads">Can not create downloads dir</string>
-    <string name="voice_search_not_found">Voice search not found</string>
     <string name="new_version_dialog_title">New version available</string>
     <string name="later">Later</string>
     <string name="downloads">Downloads</string>
     <string name="downloads_notifications_description">Notifications regarding downloads statuses</string>
     <string name="main">Main</string>
     <string name="version_and_updates"><![CDATA[Version & updates]]></string>
+    <string name="about_browser">About</string>
+    <string name="about_project_source">Open-source project · GitHub</string>
+    <string name="about_license">License</string>
+    <string name="about_privacy">Privacy policy</string>
     <string name="version_s">Version: %s</string>
+    <string name="engine_version_s">Engine: %s</string>
     <string name="build_flavor_s">Build flavor: %1$s · %2$s</string>
     <string name="support_the_author">☕ Support the author</string>
     <string name="view_license">📃 License</string>
@@ -112,6 +124,9 @@
     <string name="err_desk">Error description:</string>
     <string name="details">Details:</string>
     <string name="exit">Exit</string>
+    <string name="exit_confirmation">Exit %1$s?</string>
+    <string name="home_card_move_previous">Move earlier</string>
+    <string name="home_card_move_next">Move later</string>
     <string name="find_in_apps_store">Find in applications store</string>
     <string name="close_application">Close application</string>
     <string name="close_tab">Close tab</string>
@@ -120,6 +135,7 @@
     <string name="never">never</string>
     <string name="last_update">Last update</string>
     <string name="update_ad_blocker_list">Update ad-blocker list</string>
+    <string name="adblock_list_load_error">Error loading ad-blocker list</string>
     <string name="toggle_keep_screen_on">Keep screen on</string>
     <string name="navigate_with_joystick_axes">Navigate with joystick axes</string>
     <string name="cursor_max_speed">Virtual cursor max speed</string>
@@ -139,7 +155,7 @@
         <item>Dark</item>
     </array>
     <string name="incognito_mode">Incognito mode</string>
-    <string name="incognito_mode_hint">Now you can browse privately, and other people who use this device won’t see your activity. TV Bro won’t save your browsing history, cookies and site data, information entered in forms.\n\nHowever, downloads and bookmarks will be saved. Your activity might still be visible to websites you visit, your organization or internet service provider.</string>
+    <string name="incognito_mode_hint">Now you can browse privately, and other people who use this device won’t see your activity. 浏览器 won’t save your browsing history, cookies and site data, information entered in forms.\n\nHowever, downloads and bookmarks will be saved. Your activity might still be visible to websites you visit, your organization or internet service provider.</string>
     <string name="don_t_show_again">Don\'t show again</string>
     <string name="why_icon_changed">Why icon changed?</string>
     <string name="clear_web_cache">Clear web cache</string>
@@ -162,7 +178,7 @@
     <string name="custom_home_page_url">Custom home page URL</string>
     <string name="home_page_links">Links on home page</string>
     <array name="home_page_modes">
-        <item>TV Bro Home</item>
+        <item>浏览器 Home</item>
         <item>Search engine</item>
         <item>Custom</item>
         <item>Blank</item>
@@ -190,4 +206,12 @@
     <string name="media_rewind">Rewind Media</string>
     <string name="media_fast_forward">Fast Forward Media</string>
     <string name="long_press">Long press</string>
+    <string name="menu_home">Home</string>
+    <string name="menu_back">Back</string>
+    <string name="menu_forward">Forward</string>
+    <string name="menu_refresh">Refresh</string>
+    <string name="menu_ads">Ad blocking</string>
+    <string name="menu_popups">Pop-up blocking</string>
+    <string name="menu_close">Close tab</string>
+    <string name="menu_new_tab">New tab</string>
 </resources>

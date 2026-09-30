@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 108 108">
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#46558d"/><stop offset=".52" stop-color="#252b49"/><stop offset="1" stop-color="#111420"/>
+    </linearGradient>
+    <linearGradient id="horizon" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#7764cc" stop-opacity=".38"/><stop offset=".5" stop-color="#191c36"/>
+      <stop offset="1" stop-color="#101421"/>
+    </linearGradient>
+  </defs>
+  <rect width="108" height="108" rx="24" fill="url(#background)"/>
+  <path d="M0 81Q54 56 108 81V108H0Z" fill="url(#horizon)"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M42 25L33 16M66 25L75 16" stroke="#aabaff" stroke-width="4"/>
+    <rect x="19" y="26" width="70" height="55" rx="13" stroke="#f2f3fa" stroke-width="4"/>
+    <circle cx="54" cy="53" r="18" stroke="#bdcbff" stroke-width="3"/>
+    <ellipse cx="54" cy="53" rx="7" ry="18" stroke="#bdcbff" stroke-width="2.5"/>
+    <path d="M36 53H72" stroke="#bdcbff" stroke-width="2.5"/>
+    <path d="M32 83L29 89M76 83L79 89" stroke="#f2f3fa" stroke-width="4"/>
+  </g>
+</svg>

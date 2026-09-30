@@ -14,7 +14,7 @@ import com.phlox.tvwebbrowser.model.FavoriteItem
 /**
  * Created by PDT on 13.09.2016.
  */
-class FavoriteEditorDialog(context: Context, private val callback: Callback, private val item: FavoriteItem) : Dialog(context) {
+class FavoriteEditorDialog(context: Context, private val callback: Callback, private val item: FavoriteItem) : Dialog(context, R.style.BookmarksDialog) {
     private val tvTitle: TextView
     private val tvUrl: TextView
     private val etTitle: EditText
@@ -32,6 +32,7 @@ class FavoriteEditorDialog(context: Context, private val callback: Callback, pri
         setCancelable(true)
         setTitle(if (item.id == 0L) R.string.new_bookmark else R.string.edit)
         setContentView(R.layout.dialog_new_favorite_item)
+        findViewById<TextView>(R.id.tvDialogTitle).setText(if (item.id == 0L) R.string.new_bookmark else R.string.edit)
         tvTitle = findViewById<View>(R.id.tvTitle) as TextView
         tvUrl = findViewById<View>(R.id.tvUrl) as TextView
         etTitle = findViewById<View>(R.id.etTitle) as EditText

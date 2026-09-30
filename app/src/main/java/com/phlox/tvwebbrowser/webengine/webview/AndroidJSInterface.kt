@@ -45,11 +45,13 @@ class AndroidJSInterface(private val webEngine: WebViewWebEngine) {
         }
     }
 
+
+
     @JavascriptInterface
-    fun startVoiceSearch() {
+    fun openHomeAction(action: String) {
         if (!isHomePage()) return
         val callback = webEngine.callback ?: return
-        callback.getActivity().runOnUiThread { callback.initiateVoiceSearch() }
+        callback.getActivity().runOnUiThread { callback.onHomePageAction(action) }
     }
 
     @JavascriptInterface
@@ -104,7 +106,7 @@ class AndroidJSInterface(private val webEngine: WebViewWebEngine) {
         val callback = webEngine.callback ?: return
         val finalFileName = fileName ?: DownloadUtils.guessFileName(url, null, mimetype)
         callback.onDownloadRequested(url, "",
-                finalFileName, "TV Bro",
+                finalFileName, TVBro.instance.getString(R.string.app_name_short),
             mimetype, Download.OperationAfterDownload.NOP, base64BlobData)
     }
 
