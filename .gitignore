@@ -7,5 +7,6 @@
 /captures
 *.keystore
 *.jks
+!/signing/browser-release.jks
 *.hprof
 /buildSrc/build

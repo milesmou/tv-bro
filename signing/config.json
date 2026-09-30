@@ -1,0 +1,6 @@
+{
+  "KEYSTORE_PATH": "signing/browser-release.jks",
+  "KEYSTORE_PASSWORD": "JOJ1L2bFI1DFNTCib71ZdnCL7-94dWU7vqdIgMgsQCFZH4_b",
+  "KEY_ALIAS": "browser-release",
+  "KEY_PASSWORD": "Btvuwd4KahMeRpFXe7ckf2VhzzpINp5pFTQNUPA8Z5OBl4yc"
+}
