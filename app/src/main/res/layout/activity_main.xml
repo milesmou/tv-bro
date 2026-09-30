@@ -205,7 +205,8 @@
         android:id="@+id/ivMiniatures"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:scaleType="fitXY"
+        android:layout_centerInParent="true"
+        android:scaleType="fitCenter"
         tools:ignore="ContentDescription" />
 
     <LinearLayout

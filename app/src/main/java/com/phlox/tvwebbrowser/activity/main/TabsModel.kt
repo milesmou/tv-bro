@@ -15,7 +15,8 @@ import com.phlox.tvwebbrowser.utils.observable.ObservableValue
 import com.phlox.tvwebbrowser.webengine.WebEngineWindowProviderCallback
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.withLock
+import com.phlox.tvwebbrowser.webengine.isGecko
 import kotlinx.coroutines.withContext
 import java.net.URL
 
@@ -35,11 +36,25 @@ class TabsModel : ActiveModel() {
         lastOpenedTab = tab
     }
 
-    suspend fun retainLastOpenedTab() {
+    fun checkpoint(retainLast: Boolean = false) {
+        val tab = currentTab.value
+        tab?.onPause()
+        TVBro.instance.sessionSaveJob = TVBro.instance.sessionScope.launch {
+            try {
+                if (retainLast) retainLastOpenedTab()
+                else tab?.let { saveTab(it) }
+            } catch (e: Exception) {
+                Log.e(TAG, "Unable to save browser session", e)
+            }
+        }
+    }
+
+    suspend fun retainLastOpenedTab() = TVBro.instance.sessionMutex.withLock {
         val keep = lastOpenedTab?.takeIf { candidate -> tabsStates.any { it === candidate } }
-            ?: tabsStates.maxByOrNull { it.id } ?: return
-        saveTab(keep)
+            ?: tabsStates.maxByOrNull { it.id } ?: return@withLock
+        persistTab(keep)
         val others = tabsStates.filter { it !== keep }
+        tabsStates.replaceAll(listOf(keep))
         val dao = AppDatabase.db.tabsDao()
         others.forEach {
             dao.delete(it)
@@ -51,7 +66,6 @@ class TabsModel : ActiveModel() {
         keep.selected = true
         keep.position = 0
         dao.update(keep)
-        tabsStates.replaceAll(listOf(keep))
         lastOpenedTab = keep
     }
 
@@ -76,6 +90,7 @@ class TabsModel : ActiveModel() {
     }
 
     fun loadState() = modelScope.launch(Dispatchers.Main) {
+        TVBro.instance.sessionSaveJob?.join()
         if (loaded) {
             //check is incognito mode changed
             if (incognitoMode != config.incognitoMode) {
@@ -105,38 +120,51 @@ class TabsModel : ActiveModel() {
         loaded = true
     }
 
-    suspend fun saveTab(tab: WebTabState) {
+    suspend fun saveTab(tab: WebTabState) = TVBro.instance.sessionMutex.withLock {
+        if (tabsStates.none { it === tab }) return@withLock
+        persistTab(tab)
+    }
+
+    private suspend fun persistTab(tab: WebTabState) {
+        val snapshot = tab.copy().apply { savedState = tab.savedState }
+        val isGecko = tab.webEngine.isGecko()
         val tabsDB = AppDatabase.db.tabsDao()
-        if (tab.selected) {
-            tabsDB.unselectAll(config.incognitoMode)
+        if (snapshot.selected) {
+            tabsDB.unselectAll(snapshot.incognito)
         }
         withContext(Dispatchers.IO) {
-            tab.saveWebViewStateToFile()
+            snapshot.saveWebViewStateToFile(isGecko)
         }
-        if (tab.id != 0L) {
-            tabsDB.update(tab)
+        tab.wvStateFileName = snapshot.wvStateFileName
+        if (snapshot.id != 0L) {
+            tabsDB.update(snapshot)
         } else {
-            tab.id = tabsDB.insert(tab)
+            tab.id = tabsDB.insert(snapshot)
         }
     }
 
     fun onCloseTab(tab: WebTabState) {
         tab.webEngine.onDetachFromWindow(completely = true, destroyTab = true)
         tabsStates.remove(tab)
-        modelScope.launch(Dispatchers.Main) {
-            val tabsDB = AppDatabase.db.tabsDao()
-            tabsDB.delete(tab)
-            launch { tab.removeFiles() }
+        TVBro.instance.sessionScope.launch {
+            TVBro.instance.sessionMutex.withLock {
+                val tabsDB = AppDatabase.db.tabsDao()
+                tabsDB.delete(tab)
+                withContext(Dispatchers.IO) { tab.removeFiles() }
+            }
         }
     }
 
-    fun onCloseAllTabs() = modelScope.launch(Dispatchers.Main) {
+    fun onCloseAllTabs() = TVBro.instance.sessionScope.launch {
         val tabsClone = ArrayList(tabsStates)
         tabsStates.clear()
-        val tabsDB = AppDatabase.db.tabsDao()
-        tabsDB.deleteAll(config.incognitoMode)
-        withContext(Dispatchers.IO) {
-            tabsClone.forEach { it.removeFiles() }
+        tabsClone.forEach { it.webEngine.onDetachFromWindow(completely = true, destroyTab = true) }
+        TVBro.instance.sessionMutex.withLock {
+            val tabsDB = AppDatabase.db.tabsDao()
+            tabsDB.deleteAll(config.incognitoMode)
+            withContext(Dispatchers.IO) {
+                tabsClone.forEach { it.removeFiles() }
+            }
         }
     }
 
@@ -160,7 +188,7 @@ class TabsModel : ActiveModel() {
             currentTab.value?.apply {
                 webEngine.onDetachFromWindow(completely = false, destroyTab = false)
                 onPause()
-                modelScope.launch { saveTab(this@apply) }
+                TVBro.instance.sessionScope.launch { saveTab(this@apply) }
             }
 
             newTab.selected = true

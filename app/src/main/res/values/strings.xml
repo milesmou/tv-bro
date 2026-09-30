@@ -214,4 +214,8 @@
     <string name="menu_popups">Pop-up blocking</string>
     <string name="menu_close">Close tab</string>
     <string name="menu_new_tab">New tab</string>
+    <string name="page_load_failed_title">Page could not be loaded</string>
+    <string name="page_load_failed_message">Check your connection and try again, or return to the home page.</string>
+    <string name="page_renderer_failed_message">The page stopped responding. Retry to reopen it, or return to the home page.</string>
+    <string name="page_retry">Retry</string>
 </resources>

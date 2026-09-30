@@ -124,7 +124,8 @@ class DownloadService : Service() {
     }
 
     private fun onTaskEnded(task: DownloadTask) {
-        when (task.downloadInfo.operationAfterDownload) {
+        when (if (task.downloadInfo.size >= 0 && !task.downloadInfo.cancelled)
+            task.downloadInfo.operationAfterDownload else Download.OperationAfterDownload.NOP) {
             Download.OperationAfterDownload.INSTALL -> {
                 val canInstallFromOtherSources = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     packageManager.canRequestPackageInstalls()
@@ -147,14 +148,15 @@ class DownloadService : Service() {
 
     fun launchInstallAPKActivity(context: Context, download: Download) {
         val file = File(download.filepath)
-        val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(file.extension)
-        val apkURI = FileProvider.getUriForFile(
+        val mimeType = "application/vnd.android.package-archive"
+        val apkURI = if (download.filepath.startsWith("content://")) android.net.Uri.parse(download.filepath) else FileProvider.getUriForFile(
                 context,
                 context.applicationContext.packageName + ".provider", file)
 
         val install = Intent(Intent.ACTION_INSTALL_PACKAGE)
         install.setDataAndType(apkURI, mimeType)
         install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        install.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         try {
             context.startActivity(install)
         } catch (e: ActivityNotFoundException) {
@@ -163,7 +165,7 @@ class DownloadService : Service() {
     }
 
     fun startDownload(download: Download) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             val extPos = download.filename.lastIndexOf(".")
             val hasExt = extPos != -1
             var ext: String? = null

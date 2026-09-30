@@ -1,7 +1,7 @@
 package com.phlox.tvwebbrowser.activity.main.dialogs.settings
 
-import android.app.Dialog
 import android.content.Context
+import com.phlox.tvwebbrowser.activity.main.dialogs.FocusRestoringDialog
 import android.content.DialogInterface
 import android.os.Bundle
 import android.view.View
@@ -15,7 +15,7 @@ import com.phlox.tvwebbrowser.activity.main.SettingsModel
 import com.phlox.tvwebbrowser.widgets.SegmentedButtonTabsAdapter
 
 class SettingsDialog(context: Context, val model: SettingsModel) :
-    Dialog(context, R.style.SettingsDialog),
+    FocusRestoringDialog(context, R.style.SettingsDialog),
     DialogInterface.OnDismissListener, VersionSettingsView.Callback {
     private var mainView: MainSettingsView? = null
     private var sbTabs: SegmentedButton

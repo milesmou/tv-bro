@@ -1,7 +1,7 @@
 package com.phlox.tvwebbrowser.activity.main.dialogs.favorites
 
-import android.app.Dialog
 import android.content.Context
+import com.phlox.tvwebbrowser.activity.main.dialogs.FocusRestoringDialog
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
@@ -14,7 +14,7 @@ import com.phlox.tvwebbrowser.model.FavoriteItem
 /**
  * Created by PDT on 13.09.2016.
  */
-class FavoriteEditorDialog(context: Context, private val callback: Callback, private val item: FavoriteItem) : Dialog(context, R.style.BookmarksDialog) {
+class FavoriteEditorDialog(context: Context, private val callback: Callback, private val item: FavoriteItem) : FocusRestoringDialog(context, R.style.BookmarksDialog) {
     private val tvTitle: TextView
     private val tvUrl: TextView
     private val etTitle: EditText

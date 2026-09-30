@@ -1,13 +1,12 @@
 package com.phlox.tvwebbrowser.activity.main.dialogs
 
-import android.app.Dialog
 import android.content.Context
 import android.view.WindowManager
 import com.phlox.tvwebbrowser.R
 import com.phlox.tvwebbrowser.databinding.DialogExitConfirmationBinding
 
 class ExitConfirmationDialog(context: Context, onExit: () -> Unit) :
-    Dialog(context, R.style.BookmarksDialog) {
+    FocusRestoringDialog(context, R.style.BookmarksDialog) {
     private val binding = DialogExitConfirmationBinding.inflate(layoutInflater)
 
     init {

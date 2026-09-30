@@ -156,6 +156,13 @@ open class MainActivity : AppCompatActivity() {
         prefs = getSharedPreferences(TVBro.MAIN_PREFS_NAME, Context.MODE_PRIVATE)
         vb = ActivityMainBinding.inflate(layoutInflater)
         setContentView(vb.root)
+        val previewSize = com.phlox.tvwebbrowser.utils.ThumbnailSize.calculate(
+            resources.displayMetrics.widthPixels, resources.displayMetrics.heightPixels,
+            resources.displayMetrics.widthPixels)
+        vb.ivMiniatures.layoutParams = vb.ivMiniatures.layoutParams.apply {
+            width = previewSize.first
+            height = previewSize.second
+        }
 
         vb.ivMiniatures.visibility = View.INVISIBLE
         vb.rlActionBar.visibility = View.INVISIBLE
@@ -609,7 +616,7 @@ open class MainActivity : AppCompatActivity() {
                                     base64BlobData: String? = null, stream: InputStream?, size: Long = 0L) {
         downloadIntent = Download(url, originalDownloadFileName, null, operationAfterDownload,
             mimeType, referer, userAgent, base64BlobData, stream, size)
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R &&
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q &&
             checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(
                 arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
@@ -700,12 +707,8 @@ open class MainActivity : AppCompatActivity() {
 
     override fun onPause() {
         unregisterReceiver(mConnectivityChangeReceiver)
-        tabsModel.currentTab.value?.apply {
-            webEngine.onPause()
-            onPause()
-            runBlocking { tabsModel.saveTab(this@apply) }
-        }
-        if (isFinishing) runBlocking { tabsModel.retainLastOpenedTab() }
+        tabsModel.currentTab.value?.webEngine?.onPause()
+        tabsModel.checkpoint(retainLast = isFinishing)
         super.onPause()
     }
 
@@ -813,8 +816,12 @@ open class MainActivity : AppCompatActivity() {
         intentDataToCopy?.let {
             intent.putExtras(it)
         }
-        startActivity(intent)
-        exitProcess(0)
+        if (::tabsModel.isInitialized) tabsModel.checkpoint(retainLast = true)
+        TVBro.instance.sessionScope.launch {
+            TVBro.instance.sessionSaveJob?.join()
+            startActivity(intent)
+            exitProcess(0)
+        }
     }
 
     fun toggleMenu() {
@@ -973,6 +980,7 @@ open class MainActivity : AppCompatActivity() {
                 withContext(Dispatchers.IO) {
                     val thumbnail = currentTab.loadThumbnail()
                     withContext(Dispatchers.Main) {
+                        if (tabByTitleIndex(vb.vTabs.current) != currentTab) return@withContext
                         if (thumbnail != null) {
                             vb.ivMiniatures.setImageBitmap(currentTab.thumbnail)
                         } else {
@@ -1213,6 +1221,8 @@ open class MainActivity : AppCompatActivity() {
             } else if (url != null) {
                 tab.url = url
             }
+
+            tabsModel.checkpoint()
 
             //thumbnail
             tabsModel.tabsStates.onEach { if (it != tab) it.thumbnail = null }

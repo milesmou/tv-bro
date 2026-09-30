@@ -212,4 +212,8 @@
     <string name="menu_popups">彈窗阻擋</string>
     <string name="menu_close">關閉分頁</string>
     <string name="menu_new_tab">新增分頁</string>
+    <string name="page_load_failed_title">網頁載入失敗</string>
+    <string name="page_load_failed_message">請檢查網路後重試，或返回首頁。</string>
+    <string name="page_renderer_failed_message">網頁程序已退出，請重試開啟網頁，或返回首頁。</string>
+    <string name="page_retry">重試</string>
 </resources>

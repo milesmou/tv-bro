@@ -62,8 +62,9 @@ class HistoryActivity : AppCompatActivity(), AdapterView.OnItemClickListener, Ad
 
         historyModel.lastLoadedItems.subscribe(this, false) {
             if (it.isEmpty()) return@subscribe
+            val firstLoad = adapter!!.realCount == 0L
             adapter!!.addItems(it)
-            vb.listView.requestFocus()
+            if (firstLoad && currentFocus == null) vb.listView.requestFocus()
         }
 
         historyModel.loadItems(false)

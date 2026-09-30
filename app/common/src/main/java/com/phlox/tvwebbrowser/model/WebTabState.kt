@@ -17,8 +17,8 @@ import kotlinx.coroutines.withContext
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.File
-import java.io.FileOutputStream
-import java.nio.charset.Charset
+import android.util.AtomicFile
+import java.util.UUID
 
 
 /**
@@ -87,36 +87,23 @@ data class WebTabState(@PrimaryKey(autoGenerate = true)
     }
 
     private suspend fun saveThumbnail(context: Context) {
-        val thumbnail = this.thumbnail
-        val thumbnailHash = this.thumbnailHash
-        val url = url
-        if (thumbnail == null) return
+        val image = thumbnail ?: return
         withContext(Dispatchers.IO) {
             synchronized(this@WebTabState) {
-                val tabsThumbsDir = File(context.cacheDir.absolutePath + File.separator + TAB_THUMBNAILS_DIR)
-                if (tabsThumbsDir.exists() || tabsThumbsDir.mkdir()) {
-                    try {
-                        val hash = Utils.MD5_Hash(url.toByteArray(Charset.defaultCharset()))
-                        if (hash != null && hash != thumbnailHash) {
-                            if (thumbnailHash != null) {
-                                removeThumbnailFile()
-                            }
-                            val file = File(getThumbnailPath(hash))
-                            var fos: FileOutputStream? = null
-                            try {
-                                fos = FileOutputStream(file)
-                                thumbnail.compress(Bitmap.CompressFormat.PNG, 100, fos)
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                            } finally {
-                                fos?.close()
-                            }
-
-                            this@WebTabState.thumbnailHash = hash
-                        }
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
+                val directory = File(context.cacheDir, TAB_THUMBNAILS_DIR)
+                if (!directory.exists() && !directory.mkdirs()) return@synchronized
+                // Separate files per tab; refresh the same URL's preview after page changes.
+                val hash = thumbnailHash ?: UUID.randomUUID().toString()
+                val file = AtomicFile(File(getThumbnailPath(hash)))
+                val output = file.startWrite()
+                try {
+                    if (!image.compress(Bitmap.CompressFormat.PNG, 100, output))
+                        throw java.io.IOException("Unable to encode tab preview")
+                    file.finishWrite(output)
+                    thumbnailHash = hash
+                } catch (e: Exception) {
+                    file.failWrite(output)
+                    android.util.Log.w(TAG, "Unable to save tab preview", e)
                 }
             }
         }
@@ -139,7 +126,7 @@ data class WebTabState(@PrimaryKey(autoGenerate = true)
             removeThumbnailFile()
         }
         wvStateFileName?.apply {
-            File(getWVStatePath(this)).delete()
+            AtomicFile(File(getWVStatePath(this))).delete()
             wvStateFileName = null
         }
     }
@@ -147,7 +134,7 @@ data class WebTabState(@PrimaryKey(autoGenerate = true)
     private fun removeThumbnailFile() {
         if (thumbnailHash == null) return
         val thumbnailFile = File(getThumbnailPath(thumbnailHash!!))
-        thumbnailFile.delete()
+        AtomicFile(thumbnailFile).delete()
         thumbnailHash = null
     }
 
@@ -162,7 +149,7 @@ data class WebTabState(@PrimaryKey(autoGenerate = true)
                 return false
             }
             try {
-                val stateBytes = File(getWVStatePath(stateFileName)).readBytes()
+                val stateBytes = AtomicFile(File(getWVStatePath(stateFileName))).readFully()
                 state = webEngine.stateFromBytes(stateBytes)
                 if (state == null) return false
                 this.savedState = state
@@ -176,14 +163,14 @@ data class WebTabState(@PrimaryKey(autoGenerate = true)
         return false
     }
 
-    fun saveWebViewStateToFile() {
+    fun saveWebViewStateToFile(engineIsGecko: Boolean = webEngine.isGecko()) {
         val state = savedState
         var stateFileName = wvStateFileName
         if (stateFileName != null && (
-                    (webEngine.isGecko() && !stateFileName.startsWith(
+                    (engineIsGecko && !stateFileName.startsWith(
                         GECKO_SESSION_STATE_HASH_PREFIX
                     )) ||
-                            ((!webEngine.isGecko()) && stateFileName.startsWith(
+                            ((!engineIsGecko) && stateFileName.startsWith(
                                 GECKO_SESSION_STATE_HASH_PREFIX
                             ))
                     )) {
@@ -200,15 +187,23 @@ data class WebTabState(@PrimaryKey(autoGenerate = true)
             }
         }
         if (stateFileName == null) {
-            stateFileName = Utils.MD5_Hash(stateBytes) ?: return
-            if (webEngine.isGecko()) {
+            stateFileName = UUID.randomUUID().toString()
+            if (engineIsGecko) {
                 stateFileName = GECKO_SESSION_STATE_HASH_PREFIX + stateFileName
             }
         }
         try {
             val statesDir = File(AppContext.get().filesDir.absolutePath + File.separator + TAB_WVSTATES_DIR)
             if (statesDir.exists() || statesDir.mkdir()) {
-                File(getWVStatePath(stateFileName)).writeBytes(stateBytes)
+                val file = AtomicFile(File(getWVStatePath(stateFileName)))
+                val output = file.startWrite()
+                try {
+                    output.write(stateBytes)
+                    file.finishWrite(output)
+                } catch (e: Exception) {
+                    file.failWrite(output)
+                    throw e
+                }
                 wvStateFileName = stateFileName
             }
         } catch (e: Exception) {
@@ -218,6 +213,7 @@ data class WebTabState(@PrimaryKey(autoGenerate = true)
 
     fun trimMemory() {
         webEngine.trimMemory()
+        thumbnail = null
         savedState = null
     }
 
@@ -229,14 +225,7 @@ data class WebTabState(@PrimaryKey(autoGenerate = true)
 
     suspend fun updateThumbnail(context: Context, thumbnail: Bitmap) {
         this.thumbnail = thumbnail
-        val url = url
-        var hash = Utils.MD5_Hash(url.toByteArray(Charset.defaultCharset()))
-        if (hash != null) {
-            hash += hashCode()//to make thumbnails from different tabs unique even with same url
-            if (hash != thumbnailHash) {
-                saveThumbnail(context)
-            }
-        }
+        saveThumbnail(context)
     }
 
     fun loadThumbnail(): Bitmap? {

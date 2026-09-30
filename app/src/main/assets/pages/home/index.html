@@ -15,7 +15,7 @@
             box-shadow: 0 -1.2vh 4vh #5a3ba350, inset 0 3vh 8vh #21154890; pointer-events: none; }
         button, input { font: inherit; }
         button { border: 0; cursor: pointer; color: inherit; }
-        button:focus, .site:focus { outline: 3px solid #8d9dff; outline-offset: 4px; }
+        button:focus, .site:focus { outline: clamp(3px, .22vw, 9px) solid #8d9dff; outline-offset: clamp(4px, .25vw, 10px); }
         .topbar { height: 11.5vh; display: flex; align-items: center; padding: 0 3.2vw 0 1.4vw; gap: 1.4vw; }
         .brand { display: block; width: 2.2vw; flex-shrink: 0; color: #f2f3fa; pointer-events: none; user-select: none; }
         .brand svg { width: 100%; height: 100%; }
@@ -45,15 +45,15 @@
             column-gap: 1.7vw; row-gap: 3vh; padding: .5vh .3vw; }
         .site { width: 100%; min-width: 0; text-align: left; background: none; padding: 0; border-radius: .5vw; }
         .art { position: relative; height: 15.6vh; border-radius: .5vw; display: flex; justify-content: center;
-            align-items: center; background: #fff; color: #303849; overflow: hidden; transition: transform .15s; }
+            align-items: center; padding: 0 1vw; background: #fff; color: #303849; overflow: hidden; transition: transform .15s; }
         .site:hover .art, .site:focus .art { transform: scale(1.025); }
         .site-title { display: block; font-size: 1vw; padding-top: 1.5vh; white-space: nowrap; overflow: hidden;
             text-overflow: ellipsis; }
-        .site img { width: 4.8vw; height: 4.8vw; object-fit: contain; }
+        .site img { width: 4.8vw; height: 4.8vw; object-fit: contain; flex-shrink: 0; }
         .brand-icon { margin-right: .8vw; }
         .brand-icon.rounded { border-radius: .7vw; }
-        .brand-name { font-size: 1.7vw; font-weight: 700; }
-        .monogram { font-weight: 700; font-size: 2.5vw; letter-spacing: -.1vw; }
+        .brand-name { font-size: 1.7vw; font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .monogram { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; font-size: 2.5vw; letter-spacing: -.1vw; }
         .youtube::before { content: "▶"; display: inline-block; background: #ff0000; color: #fff;
             border-radius: .6vw; padding: .15vw .7vw; margin-right: .4vw; font-size: 1.8vw; vertical-align: middle; }
         .site-edit { position: absolute; bottom: .5vh; right: .4vw; background: #0009; color: #fff;
@@ -199,7 +199,8 @@
                 if (key === "ArrowRight" && index % columns < columns - 1) next++;
                 if (key === "ArrowLeft" && index % columns > 0) next--;
                 if (key === "ArrowUp" && index >= columns) next -= columns;
-                if (key === "ArrowDown" && index + columns < cards.length) next += columns;
+                if (key === "ArrowDown" && Math.floor(index / columns) < Math.floor((cards.length - 1) / columns))
+                    next = Math.min(index + columns, cards.length - 1);
                 if (cards[next] && next !== index) { focusHomeControl(cards[next]); return; }
                 if (key === "ArrowDown") {
                     var edit = card.querySelector(".site-edit");
@@ -252,6 +253,19 @@
             clearTimeout(confirmTimer);
             confirmHeld = false;
         });
+        var rememberedFocus = null;
+        try { rememberedFocus = JSON.parse(sessionStorage.getItem("home-focus")); } catch (e) {}
+        document.addEventListener("focusin", function(event) {
+            var element = event.target;
+            var card = element.closest(".site");
+            var value = card ? {order:Number(card.dataset.order), favoriteId:card.dataset.favoriteId,
+                edit:element.classList.contains("site-edit")} : {label:element.dataset.label, search:element.id === "search-input"};
+            try { sessionStorage.setItem("home-focus", JSON.stringify(value)); } catch (e) {}
+        });
+        window.tvBroRestoreHomeFocus = function() {
+            if (!document.activeElement || document.activeElement === document.body)
+                focusHomeControl(document.getElementById("search-input"));
+        };
         document.getElementById("search-input").focus();
         function loadRecommendations() {
             return [
@@ -273,7 +287,7 @@
             location.href = link.dest_url || link.url;
         }
         function renderLinks(mode, links) {
-            var focusedCard = document.activeElement.closest(".site");
+            var focusedCard = document.activeElement && document.activeElement.closest(".site");
             var focusOrder = focusedCard ? Number(focusedCard.dataset.order) : null;
             var focusFavoriteId = focusedCard ? focusedCard.dataset.favoriteId : null;
             homePageLinksMode = mode || "RECOMMENDATIONS";
@@ -353,7 +367,6 @@
                         edit.setAttribute("aria-label", homeText.edit);
                         edit.textContent = "⋯";
                         edit.onclick = function(event) { event.stopPropagation(); TVBro.onEditBookmark(index); };
-                        edit.onkeydown = function(event) { if (event.key === "Enter") { event.preventDefault(); event.stopPropagation(); TVBro.onEditBookmark(index); } };
                         art.appendChild(edit);
                     }
                     card.appendChild(art);
@@ -361,12 +374,27 @@
                     container.appendChild(card);
                 })(i);
             }
+            if (focusOrder === null && rememberedFocus) {
+                if (typeof rememberedFocus.order === "number") {
+                    focusOrder = rememberedFocus.order;
+                    focusFavoriteId = rememberedFocus.favoriteId;
+                } else {
+                    var control = Array.from(document.querySelectorAll("[data-label]")).find(function(element) {
+                        return element.dataset.label === rememberedFocus.label;
+                    });
+                    focusHomeControl(control || document.getElementById("search-input"));
+                }
+            }
             if (focusOrder !== null) {
                 var sameCard = Array.from(container.children).find(function(card) {
                     return focusFavoriteId && card.dataset.favoriteId === focusFavoriteId;
                 });
-                focusHomeControl(sameCard || container.children[Math.min(focusOrder, container.children.length - 1)]);
+                var target = sameCard || container.children[Math.max(0, Math.min(focusOrder, container.children.length - 1))];
+                if (rememberedFocus && rememberedFocus.edit && target)
+                    target = target.querySelector(".site-edit") || target;
+                focusHomeControl(target);
             }
+            rememberedFocus = null;
         }
         function onFaviconLoaded(url, data) {
             document.querySelectorAll(".site img").forEach(function(icon) {

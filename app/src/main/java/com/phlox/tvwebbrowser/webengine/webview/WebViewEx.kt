@@ -35,6 +35,8 @@ import android.webkit.ValueCallback
 import android.webkit.WebBackForwardList
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceError
+import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -52,6 +54,7 @@ import com.phlox.tvwebbrowser.Config
 import com.phlox.tvwebbrowser.R
 import com.phlox.tvwebbrowser.utils.DPADNavigationEventsAdapter
 import com.phlox.tvwebbrowser.utils.Utils
+import com.phlox.tvwebbrowser.utils.ThumbnailSize
 import java.net.URLEncoder
 import java.util.UUID
 
@@ -119,6 +122,7 @@ open class WebViewEx(context: Context, val callback: Callback, val jsInterface: 
         fun onPageStarted(url: String?)
         fun onPageFinished(url: String?)
         fun onPageCertificateError(url: String?)
+        fun onLoadError(url: String, rendererGone: Boolean)
         fun isAdBlockingEnabled(): Boolean
         fun isDialogsBlockingEnabled(): Boolean
         fun isAd(request: WebResourceRequest, baseUri: Uri): Boolean
@@ -139,7 +143,7 @@ open class WebViewEx(context: Context, val callback: Callback, val jsInterface: 
         setBackgroundColor(Color.TRANSPARENT)
         with(settings) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                safeBrowsingEnabled = callback.isAdBlockingEnabled()
+                safeBrowsingEnabled = true
             }
             javaScriptEnabled = true
             useWideViewPort = true
@@ -375,6 +379,24 @@ open class WebViewEx(context: Context, val callback: Callback, val jsInterface: 
         }
 
         webViewClient = object : WebViewClient() {
+            override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
+                if (request.isForMainFrame && error.errorCode != ERROR_FAILED_SSL_HANDSHAKE) {
+                    callback.onLoadError(request.url.toString(), false)
+                }
+            }
+
+            override fun onReceivedHttpError(view: WebView, request: WebResourceRequest, response: WebResourceResponse) {
+                if (request.isForMainFrame && response.statusCode >= 400) {
+                    callback.onLoadError(request.url.toString(), false)
+                }
+            }
+
+            override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
+                // Every affected WebView gets this callback, including background tabs.
+                callback.onLoadError(currentOriginalUrl?.toString() ?: Config.HOME_PAGE_URL, true)
+                return true
+            }
+
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 Log.d(TAG, "shouldOverrideUrlLoading url: ${request.url}")
                 return callback.shouldOverrideUrlLoading(request.url.toString())
@@ -613,10 +635,11 @@ open class WebViewEx(context: Context, val callback: Callback, val jsInterface: 
 
     fun renderThumbnail(bitmap: Bitmap?): Bitmap? {
         if (width == 0 || height == 0) return null
-        var thumbnail = bitmap
+        val (targetWidth, targetHeight) = ThumbnailSize.calculate(width, height, resources.displayMetrics.widthPixels)
+        var thumbnail = bitmap?.takeIf { !it.isRecycled && it.isMutable && it.width == targetWidth && it.height == targetHeight }
         if (thumbnail == null) {
             try {
-                thumbnail = createBitmap(width, height, Bitmap.Config.RGB_565)
+                thumbnail = createBitmap(targetWidth, targetHeight, Bitmap.Config.RGB_565)
             } catch (e: Throwable) {
                 e.printStackTrace()
             }
@@ -626,8 +649,8 @@ open class WebViewEx(context: Context, val callback: Callback, val jsInterface: 
         }
         val canvas = Canvas(thumbnail)
         val scaleFactor = thumbnail.width / width.toFloat()
-        canvas.scale(scaleFactor, scaleFactor)
-        canvas.translate(-scrollX.toFloat() * scaleFactor, -scrollY.toFloat() * scaleFactor)
+        canvas.scale(scaleFactor, thumbnail.height / height.toFloat())
+        canvas.translate(-scrollX.toFloat(), -scrollY.toFloat())
         super.draw(canvas)
         return thumbnail
     }
@@ -682,9 +705,7 @@ open class WebViewEx(context: Context, val callback: Callback, val jsInterface: 
     }
 
     fun onUpdateAdblockSetting(adblockEnabled: Boolean) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            settings.safeBrowsingEnabled = adblockEnabled
-        }
+        // Ad blocking is handled in shouldInterceptRequest. Safe Browsing stays enabled.
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {

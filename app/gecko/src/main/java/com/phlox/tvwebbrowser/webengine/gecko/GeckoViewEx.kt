@@ -11,6 +11,7 @@ import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoView
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+import com.phlox.tvwebbrowser.utils.ThumbnailSize
 
 
 open class GeckoViewEx @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) :
@@ -46,17 +47,14 @@ open class GeckoViewEx @JvmOverloads constructor(context: Context, attrs: Attrib
 
     suspend fun renderThumbnail(bitmap: Bitmap?): Bitmap? {
         val screenshotBuilder = screenshot() ?: return null
-        var thumbnail = bitmap
+        if (width <= 0 || height <= 0) return null
+        val (targetWidth, targetHeight) = ThumbnailSize.calculate(width, height, resources.displayMetrics.widthPixels)
+        var thumbnail = bitmap?.takeIf { !it.isRecycled && it.isMutable && it.width == targetWidth && it.height == targetHeight }
         if (thumbnail == null) {
             try {
-                thumbnail = Bitmap.createBitmap(width / 2, height / 2, Bitmap.Config.ARGB_8888)
+                thumbnail = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888)
             } catch (e: Throwable) {
                 e.printStackTrace()
-                try {
-                    thumbnail = Bitmap.createBitmap(width / 4, height / 4, Bitmap.Config.ARGB_8888)
-                } catch (e: OutOfMemoryError) {
-                    e.printStackTrace()
-                }
             }
         }
         if (thumbnail == null) {

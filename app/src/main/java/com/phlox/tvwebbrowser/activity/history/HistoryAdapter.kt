@@ -95,15 +95,18 @@ class HistoryAdapter : BaseAdapter(), PinnedSectionListView.PinnedSectionListAda
 
     fun erase() {
         items.clear()
+        realCount = 0
+        lastHeaderDate = -1
         notifyDataSetChanged()
     }
 
     fun remove(historyItem: HistoryItem) {
-        items.remove(historyItem)
+        if (items.remove(historyItem) && !historyItem.isDateHeader) realCount--
         notifyDataSetChanged()
     }
 
     fun remove(selectedItems: List<HistoryItem>) {
+        realCount -= items.count { !it.isDateHeader && it in selectedItems }
         items.removeAll(selectedItems)
         notifyDataSetChanged()
     }

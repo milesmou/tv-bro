@@ -1,6 +1,5 @@
 package com.phlox.tvwebbrowser.activity.main.dialogs
 
-import android.app.Dialog
 import android.content.Context
 import android.view.KeyEvent
 import android.view.WindowManager
@@ -9,7 +8,7 @@ import com.phlox.tvwebbrowser.R
 import com.phlox.tvwebbrowser.databinding.DialogSearchBinding
 
 class SearchDialog(context: Context, initialUrl: String, private val onSearch: (String) -> Unit) :
-    Dialog(context, R.style.BookmarksDialog) {
+    FocusRestoringDialog(context, R.style.BookmarksDialog) {
     private val binding = DialogSearchBinding.inflate(layoutInflater)
 
     init {

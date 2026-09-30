@@ -6,11 +6,15 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import androidx.webkit.WebViewCompat
+import com.phlox.tvwebbrowser.activity.main.dialogs.PageErrorDialog
+import com.phlox.tvwebbrowser.R
 import com.phlox.tvwebbrowser.AppContext
 import com.phlox.tvwebbrowser.Config
 import com.phlox.tvwebbrowser.model.WebTabState
@@ -31,6 +35,9 @@ class WebViewWebEngine(val tab: WebTabState) : WebEngine, CursorDrawerDelegate.C
     private var fullScreenView: View? = null
     private val permissionsRequests = HashMap<Int, Boolean>()//request code, isGeolocationPermissionRequest
     private val jsInterface = AndroidJSInterface(this)
+    private var failedPageUrl: String? = null
+    private var errorDialog: PageErrorDialog? = null
+    private var rendererFailed = false
 
     override fun getWebEngineName(): String = "WebView"
 
@@ -57,7 +64,8 @@ class WebViewWebEngine(val tab: WebTabState) : WebEngine, CursorDrawerDelegate.C
 
     override fun restoreState(savedInstanceState: Any) {
         if (savedInstanceState is Bundle) {
-            webView?.restoreState(savedInstanceState)
+            // Empty/invalid state (including a replaced renderer) must not reopen a blank tab.
+            if (webView?.restoreState(savedInstanceState) == null) webView?.loadUrl(tab.url)
         } else {
             throw IllegalArgumentException("savedInstanceState must be Bundle")
         }
@@ -67,6 +75,9 @@ class WebViewWebEngine(val tab: WebTabState) : WebEngine, CursorDrawerDelegate.C
         Utils.bytesToBundle(bytes)
 
     override fun loadUrl(url: String) {
+        failedPageUrl = null
+        errorDialog?.dismiss()
+        errorDialog = null
         webView?.loadUrl(url)
     }
 
@@ -113,7 +124,9 @@ class WebViewWebEngine(val tab: WebTabState) : WebEngine, CursorDrawerDelegate.C
     @Throws(Exception::class)
     override fun getOrCreateView(activityContext: Context): View {
         if (webView == null) {
-            webView = WebViewEx(activityContext, webViewCallback, jsInterface)
+            webView = WebViewEx(activityContext, webViewCallback, jsInterface).also {
+                userAgentString?.let { ua -> it.settings.userAgentString = ua }
+            }
         }
         return webView!!
     }
@@ -127,7 +140,8 @@ class WebViewWebEngine(val tab: WebTabState) : WebEngine, CursorDrawerDelegate.C
     }
 
     override fun reload() {
-        webView?.reload()
+        val failed = failedPageUrl
+        if (failed != null) loadUrl(failed) else webView?.reload()
     }
 
     override fun onFilePicked(resultCode: Int, data: Intent?) {
@@ -184,14 +198,18 @@ class WebViewWebEngine(val tab: WebTabState) : WebEngine, CursorDrawerDelegate.C
         viewParent?.cursorDrawerDelegate?.callback = this
         updateNavigationMode(webView?.url ?: tab.url)
         onResume()
+        if (failedPageUrl != null) parent.post { showLoadError() }
     }
 
     override fun onDetachFromWindow(completely: Boolean, destroyTab: Boolean) {
+        errorDialog?.dismiss()
+        errorDialog = null
         onPause()
         (webView?.parent as? ViewGroup)?.removeView(webView)
         viewParent = null
         callback = null
         if (completely) {
+            webView?.destroy()
             webView = null
         }
     }
@@ -199,6 +217,7 @@ class WebViewWebEngine(val tab: WebTabState) : WebEngine, CursorDrawerDelegate.C
     override fun trimMemory() {
         val webView = webView
         if (webView != null && !webView.isAttachedToWindow) {
+            webView.destroy()
             this.webView = null
         }
     }
@@ -240,6 +259,21 @@ class WebViewWebEngine(val tab: WebTabState) : WebEngine, CursorDrawerDelegate.C
         val useCursor = !Config.isAppPage(pageUrl)
         viewParent?.cursorEnabled = useCursor
         webView?.setVirtualCursorMode(useCursor)
+    }
+
+    private fun showLoadError() {
+        val failed = failedPageUrl ?: return
+        val activity = callback?.getActivity() ?: return
+        if (activity.isFinishing || activity.isDestroyed || errorDialog != null) return
+        errorDialog = PageErrorDialog(activity,
+            if (rendererFailed) R.string.page_renderer_failed_message else R.string.page_load_failed_message,
+            onRetry = { loadUrl(failed) }, onHome = { loadUrl(Config.HOME_PAGE_URL) }).also { dialog ->
+                dialog.setOnDismissListener {
+                    errorDialog = null
+                    webView?.requestFocus()
+                }
+                dialog.show()
+            }
     }
 
     override fun getCursorDrawerDelegate(): CursorDrawerDelegate? {
@@ -307,6 +341,8 @@ class WebViewWebEngine(val tab: WebTabState) : WebEngine, CursorDrawerDelegate.C
         }
 
         override fun onPageStarted(url: String?) {
+            failedPageUrl = null
+            rendererFailed = false
             updateNavigationMode(url)
             callback?.onPageStarted(url)
         }
@@ -317,6 +353,35 @@ class WebViewWebEngine(val tab: WebTabState) : WebEngine, CursorDrawerDelegate.C
 
         override fun onPageCertificateError(url: String?) {
             callback?.onPageCertificateError(url)
+        }
+
+        override fun onLoadError(url: String, rendererGone: Boolean) {
+            failedPageUrl = url
+            rendererFailed = rendererGone
+            callback?.onProgressChanged(100)
+            if (rendererGone) {
+                val deadView = webView
+                val parent = viewParent
+                val windowCallback = callback
+                webView = null
+                (deadView?.parent as? ViewGroup)?.removeView(deadView)
+                deadView?.destroy()
+                tab.savedState = null
+                // A dead renderer's session must not be restored on the next activation.
+                tab.wvStateFileName = null
+                permissionsRequests.clear()
+                onHideCustomView()
+                if (parent != null && windowCallback != null) {
+                    Handler(Looper.getMainLooper()).post {
+                        if (viewParent === parent && callback === windowCallback && webView == null) {
+                            getOrCreateView(parent.context)
+                            onAttachToWindow(windowCallback, parent)
+                        }
+                    }
+                }
+            } else {
+                webView?.post { showLoadError() }
+            }
         }
 
         override fun isAd(request: WebResourceRequest, baseUri: Uri): Boolean {

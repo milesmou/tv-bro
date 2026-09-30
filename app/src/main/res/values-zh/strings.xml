@@ -212,4 +212,8 @@
     <string name="menu_popups">弹窗拦截</string>
     <string name="menu_close">关闭标签</string>
     <string name="menu_new_tab">新建标签</string>
+    <string name="page_load_failed_title">网页加载失败</string>
+    <string name="page_load_failed_message">请检查网络后重试，或返回主页。</string>
+    <string name="page_renderer_failed_message">网页进程已退出，请重试打开网页，或返回主页。</string>
+    <string name="page_retry">重试</string>
 </resources>

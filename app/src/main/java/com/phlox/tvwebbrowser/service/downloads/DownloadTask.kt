@@ -6,6 +6,7 @@ import android.os.Build
 import android.os.ParcelFileDescriptor.AutoCloseOutputStream
 import android.provider.MediaStore
 import android.util.Base64
+import android.util.Base64InputStream
 import android.util.Log
 import android.webkit.CookieManager
 import com.phlox.tvwebbrowser.TVBro
@@ -13,18 +14,12 @@ import com.phlox.tvwebbrowser.model.Download
 import com.phlox.tvwebbrowser.singleton.AppDatabase
 import com.phlox.tvwebbrowser.utils.DownloadUtils
 import java.io.*
-import java.net.HttpURLConnection
 import java.net.URL
-
-/**
- * Created by PDT on 23.01.2017.
- */
 
 const val MAX_CONNECT_RETRIES = 5
 
 interface DownloadTask {
     var downloadInfo: Download
-
     interface Callback {
         fun onProgress(task: DownloadTask)
         fun onError(task: DownloadTask, responseCode: Int, responseMessage: String)
@@ -33,214 +28,145 @@ interface DownloadTask {
 }
 
 class FileDownloadTask(override var downloadInfo: Download, private val userAgent: String?, val callback: DownloadTask.Callback) : Runnable, DownloadTask {
-    companion object {
-        val TAG = FileDownloadTask::class.java.simpleName
-    }
+    companion object { val TAG = FileDownloadTask::class.java.simpleName }
 
-    override fun run() {
-        downloadInfo.id = AppDatabase.db.downloadDao().insert(downloadInfo)
-
-        var input: InputStream? = null
-        var output: OutputStream? = null
+    override fun run() = runDownload(this, callback) { staging ->
         val url = URL(downloadInfo.url)
-
-        var connection: HttpURLConnection? = null
-        try {
-            var retries = 0
-            do {
-                connection = url.openConnection() as HttpURLConnection
-                connection.apply {
-                    readTimeout = 10000
-                    connectTimeout = 20000
-                    setRequestProperty("User-Agent", userAgent)
-                    if (downloadInfo.mimeType != null && downloadInfo.mimeType != "application/octet-stream") {
-                        setRequestProperty("Accept", downloadInfo.mimeType)
-                    }
-                    downloadInfo.referer?.apply { setRequestProperty("Referer", this) }
-                    useCaches = false
-                    val cookie = CookieManager.getInstance().getCookie(url.toString())
-                    if (cookie != null) setRequestProperty("cookie", cookie)
-                    if (retries > 0) {
-                        //trust me, sometimes this helps! Don't ask me how...
-                        Thread.sleep(3000)
-                    }
-                    connect()
+        val headers = mutableMapOf<String, String>()
+        userAgent?.let { headers["User-Agent"] = it }
+        downloadInfo.mimeType?.let { headers["Accept"] = it }
+        downloadInfo.referer?.let { headers["Referer"] = it }
+        CookieManager.getInstance().getCookie(url.toString())?.let { headers["Cookie"] = it }
+        HttpDownloadTransfer().transfer(url, staging, headers, { downloadInfo.cancelled }, onHeaders = { connection ->
+            // Older Android already selected a collision-free destination filename in the service.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                connection.getHeaderField("Content-Disposition")?.let {
+                    downloadInfo.filename = File(DownloadUtils.guessFileName(downloadInfo.url, it,
+                        connection.getHeaderField("Content-Type"))).name
                 }
-
-                when (connection.responseCode) {
-                    HttpURLConnection.HTTP_OK -> break
-                    HttpURLConnection.HTTP_GATEWAY_TIMEOUT,
-                    HttpURLConnection.HTTP_UNAVAILABLE -> {
-                        retries++
-                        if (retries >= MAX_CONNECT_RETRIES) {
-                            downloadInfo.size = Download.BROKEN_MARK
-                            callback.onError(this, connection.responseCode, connection.responseMessage)
-                            return
-                        }
-                    }
-                    else -> {
-                        downloadInfo.size = Download.BROKEN_MARK
-                        callback.onError(this, connection.responseCode, connection.responseMessage)
-                        return
-                    }
-                }
-            } while (true)
-
-            input = connection!!.inputStream
-
-            val fileLength = connection.contentLength
-            downloadInfo.size = fileLength.toLong()
-
-            if (connection.headerFields.containsKey("Content-Disposition")) {
-                val mime = connection.getHeaderField("Content-Type")
-                downloadInfo.filename = DownloadUtils.guessFileName(downloadInfo.url, connection.getHeaderField("Content-Disposition"), mime)
-                downloadInfo.filepath = File(File(downloadInfo.filepath).parentFile, downloadInfo.filename).absolutePath
             }
-
-            output = prepareDownloadOutput(downloadInfo)
-            Log.d(TAG, "URI: " + downloadInfo.filename)
-            val data = ByteArray(4096)
-            var total: Long = 0
-            var count = input.read(data)
-            while (count != -1) {
-                if (downloadInfo.cancelled) {
-                    downloadInfo.bytesReceived = 0
-                    downloadInfo.size = Download.CANCELLED_MARK
-                    callback.onDone(this)
-                    return
-                }
-                total += count.toLong()
-                output.write(data, 0, count)
-                downloadInfo.bytesReceived = total
-                callback.onProgress(this)
-                count = input.read(data)
-            }
-        } catch (e: Exception) {
-            downloadInfo.size = Download.BROKEN_MARK
-            callback.onError(this, 0, e.toString())
-            return
-        } finally {
-            try {
-                output?.close()
-                input?.close()
-            } catch (ignored: IOException) {
-            }
-
-            connection?.disconnect()
-            cancelDownloadIfNeeded(downloadInfo)
+        }) { received, size ->
+            downloadInfo.bytesReceived = received
+            downloadInfo.size = size
+            callback.onProgress(this)
         }
-        downloadInfo.size = downloadInfo.bytesReceived
-        callback.onDone(this)
     }
 }
 
 class BlobDownloadTask(override var downloadInfo: Download, val blobBase64Data: String, val callback: DownloadTask.Callback) : Runnable, DownloadTask {
-
-    override fun run() {
-        downloadInfo.id = AppDatabase.db.downloadDao().insert(downloadInfo)
-
-        try {
-            val blobAsBytes: ByteArray = Base64.decode(blobBase64Data.replaceFirst("data:${downloadInfo.mimeType};base64,", ""), 0)
-            val output = prepareDownloadOutput(downloadInfo)
-            output.buffered().use{ it.write(blobAsBytes) }
-            downloadInfo.size = blobAsBytes.size.toLong()
-            downloadInfo.bytesReceived = downloadInfo.size
-        } catch (e: Exception) {
-            downloadInfo.size = Download.BROKEN_MARK
-            callback.onError(this, 0, e.toString())
-            return
-        } finally {
-            cancelDownloadIfNeeded(downloadInfo)
+    override fun run() = runDownload(this, callback) { staging ->
+        val start = if (blobBase64Data.startsWith("data:")) blobBase64Data.indexOf(',') + 1 else 0
+        // Decode incrementally; avoid duplicating the full blob in byte arrays.
+        val encoded = object : InputStream() {
+            private var index = start
+            override fun read(): Int = if (index < blobBase64Data.length) blobBase64Data[index++].code else -1
+            override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
+                if (length == 0) return 0
+                if (index >= blobBase64Data.length) return -1
+                val count = minOf(length, blobBase64Data.length - index)
+                repeat(count) { buffer[offset + it] = blobBase64Data[index++].code.toByte() }
+                return count
+            }
         }
-        callback.onDone(this)
+        Base64InputStream(encoded, Base64.DEFAULT).use { input ->
+            staging.outputStream().use { copyDownload(input, it, this, callback) }
+        }
     }
 }
 
 class StreamDownloadTask(override var downloadInfo: Download, val stream: InputStream, val callback: DownloadTask.Callback) : Runnable, DownloadTask {
     override fun run() {
-        downloadInfo.id = AppDatabase.db.downloadDao().insert(downloadInfo)
-
-        var output: OutputStream? = null
         try {
-            output = prepareDownloadOutput(downloadInfo)
-            val data = ByteArray(4096)
-            var total: Long = 0
-            var count = stream.read(data)
-            while (count != -1) {
-                if (downloadInfo.cancelled) {
-                    downloadInfo.bytesReceived = 0
-                    downloadInfo.size = Download.CANCELLED_MARK
-                    callback.onDone(this)
-                    return
-                }
-                total += count.toLong()
-                output.write(data, 0, count)
-                downloadInfo.bytesReceived = total
-                callback.onProgress(this)
-                count = stream.read(data)
+            runDownload(this, callback) { staging ->
+                stream.use { input -> staging.outputStream().use { copyDownload(input, it, this, callback) } }
             }
-        } catch (e: Exception) {
-            downloadInfo.size = Download.BROKEN_MARK
-            callback.onError(this, 0, e.toString())
-            return
         } finally {
+            // Cancellation before staging still owns and must close the incoming stream.
+            runCatching { stream.close() }
+        }
+    }
+}
+
+private fun copyDownload(input: InputStream, output: OutputStream, task: DownloadTask,
+    callback: DownloadTask.Callback, reportProgress: Boolean = true) {
+    val buffer = ByteArray(64 * 1024)
+    var total = 0L
+    while (true) {
+        checkCancelled { task.downloadInfo.cancelled }
+        val count = input.read(buffer)
+        if (count < 0) break
+        output.write(buffer, 0, count)
+        total += count
+        if (reportProgress) {
+            task.downloadInfo.bytesReceived = total
+            callback.onProgress(task)
+        }
+    }
+}
+
+private fun runDownload(task: DownloadTask, callback: DownloadTask.Callback, transfer: (File) -> Unit) {
+    val info = task.downloadInfo
+    var staging: File? = null
+    var destinationCreated = false
+    var failure: Exception? = null
+    try {
+        info.id = AppDatabase.db.downloadDao().insert(info)
+        checkCancelled { info.cancelled }
+        staging = File.createTempFile("download-", ".part", TVBro.instance.cacheDir)
+        transfer(staging)
+        checkCancelled { info.cancelled }
+        val completedSize = staging.length()
+        prepareDownloadOutput(info) { destinationCreated = true }.use { output ->
+            staging.inputStream().use { copyDownload(it, output, task, callback, reportProgress = false) }
+        }
+        checkCancelled { info.cancelled }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val values = ContentValues().apply { put(MediaStore.Downloads.IS_PENDING, 0) }
+            if (TVBro.instance.contentResolver.update(Uri.parse(info.filepath), values, null, null) != 1)
+                throw IOException("Unable to publish download")
+        }
+        info.size = completedSize
+        info.bytesReceived = completedSize
+    } catch (e: Exception) {
+        failure = e
+        info.size = if (info.cancelled || e is DownloadCancelledException) Download.CANCELLED_MARK else Download.BROKEN_MARK
+        if (destinationCreated) {
             try {
-                output?.close()
-                stream.close()
-            } catch (ignored: IOException) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    TVBro.instance.contentResolver.delete(Uri.parse(info.filepath), null, null)
+                } else File(info.filepath).delete()
+            } catch (cleanupError: Exception) {
+                Log.e(FileDownloadTask.TAG, "Unable to remove incomplete download", cleanupError)
             }
-
-            cancelDownloadIfNeeded(downloadInfo)
         }
-        downloadInfo.size = downloadInfo.bytesReceived
-        callback.onDone(this)
+        info.bytesReceived = 0
+    } finally {
+        staging?.delete()
     }
+    // Notify only after streams are closed and destination cleanup/publication is complete.
+    if (failure != null && info.size != Download.CANCELLED_MARK) {
+        callback.onError(task, (failure as? HttpStatusException)?.code ?: 0, failure.toString())
+    } else callback.onDone(task)
 }
 
-private fun cancelDownloadIfNeeded(downloadInfo: Download) {
-    val filePath = downloadInfo.filepath
-    if (filePath.isEmpty()) return
-    val contentResolver = TVBro.instance.contentResolver
-    if (downloadInfo.cancelled) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val rowsDeleted = contentResolver.delete(Uri.parse(filePath), null)
-            if (rowsDeleted < 1) {
-                Log.e(FileDownloadTask.TAG, "Download cancelled but content not deleted??")
-            }
-        } else {
-            File(filePath).delete()
-        }
-    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-        val downloadDetails = ContentValues().apply {
-            put(MediaStore.Downloads.IS_PENDING, 0)
-        }
-        contentResolver.update(Uri.parse(filePath), downloadDetails, null, null)
-    }
-}
-
-private fun prepareDownloadOutput(downloadInfo: Download): OutputStream {
-    val contentResolver = TVBro.instance.contentResolver
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-        val downloadsCollection =
-            MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-        val newDownloadDetails = ContentValues().apply {
-            if (downloadInfo.filename.isNotEmpty()) {
-                put(MediaStore.Downloads.DISPLAY_NAME, downloadInfo.filename)
-            }
-            put(MediaStore.Downloads.DOWNLOAD_URI, downloadInfo.url)
-            put(MediaStore.Downloads.REFERER_URI, downloadInfo.referer)
+private fun prepareDownloadOutput(info: Download, onCreated: () -> Unit): OutputStream {
+    val resolver = TVBro.instance.contentResolver
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        val values = ContentValues().apply {
+            put(MediaStore.Downloads.DISPLAY_NAME, info.filename)
+            put(MediaStore.Downloads.MIME_TYPE, info.mimeType ?: "application/octet-stream")
+            put(MediaStore.Downloads.DOWNLOAD_URI, info.url)
+            put(MediaStore.Downloads.REFERER_URI, info.referer)
             put(MediaStore.Downloads.IS_PENDING, 1)
         }
-        val downloadUri = contentResolver
-            .insert(downloadsCollection, newDownloadDetails)
-        if (downloadUri == null) {
-            throw IllegalStateException("Can not create file")
-        }
-        val fd = contentResolver.openFileDescriptor(downloadUri, "w", null)
-        downloadInfo.filepath = downloadUri.toString()
-        AppDatabase.db.downloadDao().update(downloadInfo)
-        AutoCloseOutputStream(fd)
+        val uri = resolver.insert(MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), values)
+            ?: throw IOException("Unable to create download")
+        info.filepath = uri.toString()
+        onCreated()
+        AppDatabase.db.downloadDao().update(info)
+        val descriptor = resolver.openFileDescriptor(uri, "w") ?: throw IOException("Unable to open download")
+        AutoCloseOutputStream(descriptor)
     } else {
-        FileOutputStream(downloadInfo.filepath)
+        FileOutputStream(info.filepath).also { onCreated() }
     }
 }

@@ -1,6 +1,5 @@
 package com.phlox.tvwebbrowser.activity.main.dialogs
 
-import android.app.Dialog
 import android.content.Context
 import android.view.KeyEvent
 import android.view.WindowManager
@@ -11,7 +10,7 @@ import androidx.core.content.ContextCompat
 import com.phlox.tvwebbrowser.R
 
 class HomeCardMenuDialog(context: Context, title: String, canMovePrevious: Boolean,
-    canMoveNext: Boolean, onAction: (Int) -> Unit) : Dialog(context, R.style.BookmarksDialog) {
+    canMoveNext: Boolean, onAction: (Int) -> Unit) : FocusRestoringDialog(context, R.style.BookmarksDialog) {
     private val buttons = mutableListOf<Button>()
 
     init {
@@ -68,4 +67,5 @@ class HomeCardMenuDialog(context: Context, title: String, canMovePrevious: Boole
             WindowManager.LayoutParams.WRAP_CONTENT)
         buttons[1].requestFocus()
     }
+
 }

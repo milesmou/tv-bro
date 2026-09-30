@@ -1,7 +1,7 @@
 package com.phlox.tvwebbrowser.activity.main.dialogs.favorites
 
-import android.app.Dialog
 import android.content.Context
+import com.phlox.tvwebbrowser.activity.main.dialogs.FocusRestoringDialog
 import android.view.View
 import android.widget.*
 import com.phlox.tvwebbrowser.R
@@ -15,7 +15,7 @@ import java.util.*
 /**
  * Created by PDT on 09.09.2016.
  */
-class FavoritesDialog(context: Context, val scope: CoroutineScope, private val callback: Callback, private val currentPageTitle: String?, private val currentPageUrl: String?) : Dialog(context, R.style.BookmarksDialog), FavoriteItemView.Listener {
+class FavoritesDialog(context: Context, val scope: CoroutineScope, private val callback: Callback, private val currentPageTitle: String?, private val currentPageUrl: String?) : FocusRestoringDialog(context, R.style.BookmarksDialog), FavoriteItemView.Listener {
     private var items: MutableList<FavoriteItem> = ArrayList()
     private val adapter = FavoritesListAdapter(items, this)
 

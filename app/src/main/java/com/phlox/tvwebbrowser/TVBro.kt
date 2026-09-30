@@ -21,6 +21,12 @@ import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 import kotlin.system.exitProcess
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
 
 /**
  * Created by PDT on 09.09.2016.
@@ -38,6 +44,10 @@ class TVBro : Application(), Application.ActivityLifecycleCallbacks {
 
     var needToExitProcessAfterMainActivityFinish = false
     var needRestartMainActivityAfterExitingProcess = false
+    // Session writes must survive the Activity/model being destroyed.
+    val sessionScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    val sessionMutex = Mutex()
+    var sessionSaveJob: Job? = null
     override fun onCreate() {
         Log.i(TAG, "onCreate")
         super.onCreate()
@@ -126,13 +136,16 @@ class TVBro : Application(), Application.ActivityLifecycleCallbacks {
         Log.i(TAG, "onActivityDestroyed: " + activity.javaClass.simpleName)
         if (needToExitProcessAfterMainActivityFinish && activity is MainActivity) {
             Log.i(TAG, "onActivityDestroyed: exiting process")
-            if (needRestartMainActivityAfterExitingProcess) {
-                Log.i(TAG, "onActivityDestroyed: restarting main activity")
-                val intent = Intent(this@TVBro, MainActivity::class.java)
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                startActivity(intent)
+            sessionScope.launch {
+                sessionSaveJob?.join()
+                if (needRestartMainActivityAfterExitingProcess) {
+                    Log.i(TAG, "onActivityDestroyed: restarting main activity")
+                    val intent = Intent(this@TVBro, MainActivity::class.java)
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                    startActivity(intent)
+                }
+                exitProcess(0)
             }
-            exitProcess(0)
         }
     }
 }
