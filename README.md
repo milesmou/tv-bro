@@ -2,7 +2,7 @@
 
 本项目基于开源电视浏览器 [tv-bro](https://github.com/truefedex/tv-bro) 进行中文本地化，面向 Android TV 和电视盒子使用。应用名称为「浏览器」。
 
-当前版本：**1.0.0**；应用包名：`com.milesmou.tvbrowser`。可在 [GitHub Releases](https://github.com/milesmou/tv-bro/releases) 下载正式 APK。
+当前版本：**1.0.1**；应用包名：`com.milesmou.tvbrowser`。可在 [GitHub Releases](https://github.com/milesmou/tv-bro/releases) 下载正式 APK。
 
 在原项目的基础上，参考 BrowseHere 的界面布局与遥控器交互，对 UI 和操作方式进行了优化，让电视上的浏览、导航和设置更方便。
 
