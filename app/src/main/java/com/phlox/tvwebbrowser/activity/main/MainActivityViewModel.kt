@@ -46,9 +46,13 @@ class MainActivityViewModel: ActiveModel() {
         Log.d(TAG, "loadState")
         if (loaded) return@launch
         checkVersionCodeAndRunMigrations()
-        initHistory()
         loadHomePageLinks()
         loaded = true
+        modelScope.launch {
+            // Maintenance must not delay the first interactive page.
+            delay(3000)
+            initHistory()
+        }
     }
 
     private suspend fun checkVersionCodeAndRunMigrations() {
@@ -72,7 +76,7 @@ class MainActivityViewModel: ActiveModel() {
         }
         try {
             val result = AppDatabase.db.historyDao().last()
-            if (result.isNotEmpty()) {
+            if (result.isNotEmpty() && lastHistoryItem == null) {
                 lastHistoryItem = result[0]
             }
         } catch (e: Exception) {

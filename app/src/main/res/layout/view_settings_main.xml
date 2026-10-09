@@ -168,6 +168,7 @@
         android:clickable="true"
         android:focusable="true"
         android:focusableInTouchMode="true"
+        android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingTop="5dp">
 
@@ -192,54 +193,122 @@
       android:id="@+id/llAdBlockerDetails"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
-      android:layout_marginTop="20dp"
+      android:layout_marginTop="8dp"
+      android:layout_marginBottom="20dp"
       android:orientation="vertical"
-      android:paddingTop="5dp"
       >
-    <EditText
-        android:id="@+id/etAdBlockerListUrl"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:ems="10"
-        android:hint="@string/url"
-        android:importantForAutofill="no"
-        android:inputType="textUri"
-        />
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:orientation="horizontal">
+        android:background="@drawable/settings_subscription_background"
+        android:orientation="vertical"
+        android:padding="12dp">
+      <TextView
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:text="@string/easylist_subscription_title"
+          android:textColor="@color/day_night_text_color_contrast"
+          android:textSize="16sp"
+          android:textStyle="bold" />
+      <EditText
+          android:id="@+id/etAdBlockerListUrl"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="8dp"
+          android:background="@drawable/settings_subscription_input_background"
+          android:hint="@string/url"
+          android:importantForAutofill="no"
+          android:inputType="textUri|textMultiLine"
+          android:maxLines="2"
+          android:scrollHorizontally="false"
+          android:minHeight="48dp"
+          android:padding="12dp"
+          android:textColor="@color/day_night_text_color_contrast"
+          android:textSize="16sp"
+          android:nextFocusUp="@id/llAdblock"
+          android:nextFocusDown="@id/etChinaAdBlockerListUrl" />
       <TextView
           android:id="@+id/tvAdBlockerListInfo"
           android:layout_width="match_parent"
-          android:layout_height="match_parent"
-          android:layout_marginStart="5dp"
-          android:layout_weight="1"
-          android:gravity="center_vertical"
-          android:lines="1"
-          tools:text="Last update: never"
-          />
-      <androidx.appcompat.widget.AppCompatImageButton
-          android:id="@+id/btnAdBlockerUpdate"
-          android:layout_width="52dp"
-          android:layout_height="52dp"
-          android:layout_marginStart="12dp"
-          android:layout_weight="0"
-          android:background="@drawable/settings_action_background"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="8dp"
+          android:textColor="@color/day_night_text_color"
+          android:textSize="13sp"
+          tools:text="最后更新：2026-10-09 14:40" />
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/settings_subscription_background"
+        android:orientation="vertical"
+        android:padding="12dp">
+      <TextView
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:text="@string/easylist_china_subscription_title"
+          android:textColor="@color/day_night_text_color_contrast"
+          android:textSize="16sp"
+          android:textStyle="bold" />
+      <EditText
+          android:id="@+id/etChinaAdBlockerListUrl"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="8dp"
+          android:background="@drawable/settings_subscription_input_background"
+          android:importantForAutofill="no"
+          android:inputType="textUri|textMultiLine"
+          android:maxLines="2"
+          android:scrollHorizontally="false"
+          android:minHeight="48dp"
           android:padding="12dp"
-          android:scaleType="fitCenter"
+          android:textColor="@color/day_night_text_color_contrast"
+          android:textSize="16sp"
+          android:nextFocusUp="@id/etAdBlockerListUrl"
+          android:nextFocusDown="@id/btnAdBlockerUpdate"
+          android:hint="@string/url" />
+      <TextView
+          android:id="@+id/tvChinaAdBlockerListInfo"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="8dp"
+          android:textColor="@color/day_night_text_color"
+          android:textSize="13sp"
+          tools:text="最后更新：2026-10-09 14:40" />
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+      <androidx.appcompat.widget.AppCompatButton
+          android:id="@+id/btnAdBlockerUpdate"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:minHeight="48dp"
+          android:background="@drawable/settings_action_background"
+          android:backgroundTint="@null"
+          android:paddingStart="16dp"
+          android:paddingEnd="16dp"
+          android:paddingTop="8dp"
+          android:paddingBottom="8dp"
+          android:drawableStart="@drawable/ic_rules_refresh"
+          android:drawablePadding="8dp"
+          android:text="@string/adblock_update_subscriptions"
+          android:textAllCaps="false"
+          android:textColor="@color/day_night_text_color_contrast"
+          android:textSize="15sp"
           android:focusable="true"
           android:focusableInTouchMode="true"
-          android:contentDescription="@string/update_ad_blocker_list"
+          android:nextFocusUp="@id/etChinaAdBlockerListUrl"
           android:nextFocusDown="@+id/spTheme"
-          android:src="@drawable/ic_rules_refresh"
           />
       <ProgressBar
           android:id="@+id/pbAdBlockerListLoading"
           style="?android:attr/progressBarStyle"
-          android:layout_width="52dp"
-          android:layout_height="52dp"
+          android:layout_width="28dp"
+          android:layout_height="28dp"
           android:layout_marginStart="12dp"
           android:layout_weight="0"
           android:visibility="gone"

@@ -57,6 +57,19 @@ class MainSettingsView @JvmOverloads constructor(
                 KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN -> {
                     if (event.action == KeyEvent.ACTION_DOWN) {
                         val target = if (keyCode == KeyEvent.KEYCODE_DPAD_UP) vb.llAdblock
+                            else vb.etChinaAdBlockerListUrl
+                        target.requestFocus()
+                    }
+                    true
+                }
+                else -> false
+            }
+        }
+        vb.etChinaAdBlockerListUrl.setOnKeyListener { _, keyCode, event ->
+            when (keyCode) {
+                KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN -> {
+                    if (event.action == KeyEvent.ACTION_DOWN) {
+                        val target = if (keyCode == KeyEvent.KEYCODE_DPAD_UP) vb.etAdBlockerListUrl
                         else if (vb.btnAdBlockerUpdate.isShown && vb.btnAdBlockerUpdate.isEnabled)
                             vb.btnAdBlockerUpdate
                         else nextOptionAfterAdblock()
@@ -71,7 +84,7 @@ class MainSettingsView @JvmOverloads constructor(
             when (keyCode) {
                 KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN -> {
                     if (event.action == KeyEvent.ACTION_DOWN) {
-                        val target = if (keyCode == KeyEvent.KEYCODE_DPAD_UP) vb.etAdBlockerListUrl
+                        val target = if (keyCode == KeyEvent.KEYCODE_DPAD_UP) vb.etChinaAdBlockerListUrl
                             else nextOptionAfterAdblock()
                         target.requestFocus()
                     }
@@ -309,6 +322,7 @@ class MainSettingsView @JvmOverloads constructor(
     private fun initAdBlockConfigUI() {
         vb.scAdblock.isChecked = config.adBlockEnabled
         vb.etAdBlockerListUrl.setText(config.adBlockListURL.value)
+        vb.etChinaAdBlockerListUrl.setText(config.chinaAdBlockListURL.value)
         vb.llAdblock.setOnClickListener {
             vb.scAdblock.isChecked = !vb.scAdblock.isChecked
             config.adBlockEnabled = vb.scAdblock.isChecked
@@ -324,7 +338,6 @@ class MainSettingsView @JvmOverloads constructor(
             if (adblockModel.clientLoading.value) return@setOnClickListener
             saveAdBlockListUrl()
             adblockModel.loadAdBlockList(true)
-            it.isEnabled = false
         }
 
         updateAdBlockInfo()
@@ -332,18 +345,30 @@ class MainSettingsView @JvmOverloads constructor(
 
     private fun saveAdBlockListUrl() {
         val value = vb.etAdBlockerListUrl.text.toString().trim()
-        config.adBlockListURL.value = value.ifEmpty { Config.DEFAULT_ADBLOCK_LIST_URL }
+        val primary = value.ifEmpty { Config.DEFAULT_ADBLOCK_LIST_URL }
+        val china = vb.etChinaAdBlockerListUrl.text.toString().trim().ifEmpty {
+            Config.DEFAULT_CHINA_ADBLOCK_LIST_URL
+        }
+        if (config.adBlockListURL.value != primary) config.adBlockListLastUpdate = 0
+        if (config.chinaAdBlockListURL.value != china) config.chinaAdBlockListLastUpdate = 0
+        config.adBlockListURL.value = primary
+        config.chinaAdBlockListURL.value = china
     }
 
     private fun updateAdBlockInfo() {
-        val dateFormat = SimpleDateFormat("hh:mm dd MMMM yyyy", Locale.getDefault())
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
         val lastUpdate = if (config.adBlockListLastUpdate == 0L)
             context.getString(R.string.never) else
             dateFormat.format(Date(config.adBlockListLastUpdate))
         val infoText = "${context.getString(R.string.last_update)}: $lastUpdate"
+        val chinaDate = if (config.chinaAdBlockListLastUpdate == 0L) context.getString(R.string.never)
+            else dateFormat.format(Date(config.chinaAdBlockListLastUpdate))
         vb.tvAdBlockerListInfo.text = infoText
+        vb.tvChinaAdBlockerListInfo.text = "${context.getString(R.string.last_update)}: $chinaDate"
         val loadingAdBlockList = adblockModel.clientLoading.value
-        vb.btnAdBlockerUpdate.visibility = if (loadingAdBlockList) View.GONE else View.VISIBLE
+        // Keep the focused action in place while updating so remote navigation stays stable.
+        vb.btnAdBlockerUpdate.setText(if (loadingAdBlockList)
+            R.string.adblock_updating_subscriptions else R.string.adblock_update_subscriptions)
         vb.pbAdBlockerListLoading.visibility = if (loadingAdBlockList) View.VISIBLE else View.GONE
     }
 

@@ -31,6 +31,12 @@ class TabsModel : ActiveModel() {
     private val config = AppContext.provideConfig()
     private var incognitoMode = config.incognitoMode
     private var lastOpenedTab: WebTabState? = null
+    private var popupLevels: Map<String, Int> = emptyMap()
+
+    fun popupBlockingLevel(url: String): Int {
+        val host = runCatching { URL(url).host }.getOrNull()
+        return popupLevels[host] ?: HostConfig.DEFAULT_BLOCK_POPUPS_VALUE
+    }
 
     fun registerOpenedTab(tab: WebTabState) {
         lastOpenedTab = tab
@@ -90,7 +96,6 @@ class TabsModel : ActiveModel() {
     }
 
     fun loadState() = modelScope.launch(Dispatchers.Main) {
-        TVBro.instance.sessionSaveJob?.join()
         if (loaded) {
             //check is incognito mode changed
             if (incognitoMode != config.incognitoMode) {
@@ -100,23 +105,22 @@ class TabsModel : ActiveModel() {
                 return@launch
             }
         }
-        val tabsDao = AppDatabase.db.tabsDao()
-        val savedTabs = tabsDao.getAll(config.incognitoMode)
-        // Also trim a session left behind by an OS process termination.
-        val keep = savedTabs.maxByOrNull { it.id }
-        savedTabs.filter { it !== keep }.forEach { tab ->
-            tabsDao.delete(tab)
-            if (tab.wvStateFileName == keep?.wvStateFileName) tab.wvStateFileName = null
-            if (tab.thumbnailHash == keep?.thumbnailHash) tab.thumbnailHash = null
-            withContext(Dispatchers.IO) { tab.removeFiles() }
+        // A new app session always starts fresh. Cleanup runs behind the first page;
+        // the session mutex prevents it from deleting a newly saved home tab.
+        val sessionIncognito = config.incognitoMode
+        TVBro.instance.sessionScope.launch {
+            TVBro.instance.sessionMutex.withLock {
+                val dao = AppDatabase.db.tabsDao()
+                val previous = dao.getAll(sessionIncognito)
+                dao.deleteAll(sessionIncognito)
+                withContext(Dispatchers.IO) { previous.forEach { it.removeFiles() } }
+            }
         }
-        keep?.let {
-            it.selected = true
-            it.position = 0
-            tabsDao.update(it)
-        }
-        tabsStates.replaceAll(listOfNotNull(keep))
-        lastOpenedTab = keep
+        popupLevels = AppDatabase.db.hostsDao().popupOverrides()
+            .associate { it.hostName to (it.popupBlockLevel ?: HostConfig.DEFAULT_BLOCK_POPUPS_VALUE) }
+        tabsStates.replaceAll(emptyList())
+        currentTab.value = null
+        lastOpenedTab = null
         loaded = true
     }
 
@@ -221,7 +225,7 @@ class TabsModel : ActiveModel() {
         var hostConfig = tab.cachedHostConfig
         if (hostConfig == null || hostConfig.hostName != currentHostName) {
             val db = com.phlox.tvwebbrowser.singleton.AppDatabase.db.hostsDao()
-            hostConfig = db.findByHostName(currentHostName)
+            hostConfig = withContext(Dispatchers.IO) { db.findByHostName(currentHostName) }
             if (hostConfig == null && createIfNotFound) {
                 hostConfig = HostConfig(currentHostName)
                 hostConfig.id = db.insert(hostConfig)
@@ -235,5 +239,6 @@ class TabsModel : ActiveModel() {
         val hostConfig = findHostConfig(tab,true) ?: return
         hostConfig.popupBlockLevel = newLevel
         AppDatabase.db.hostsDao().update(hostConfig)
+        popupLevels = popupLevels + (hostConfig.hostName to newLevel)
     }
 }

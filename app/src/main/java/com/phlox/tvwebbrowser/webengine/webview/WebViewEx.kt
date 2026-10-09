@@ -428,7 +428,7 @@ open class WebViewEx(context: Context, val callback: Callback, val jsInterface: 
                     }
                 }
 
-                if (!callback.isAdBlockingEnabled()) {
+                if (request.isForMainFrame || !callback.isAdBlockingEnabled()) {
                     return super.shouldInterceptRequest(view, request)
                 }
 
@@ -444,6 +444,7 @@ open class WebViewEx(context: Context, val callback: Callback, val jsInterface: 
 
             override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
                 super.onPageStarted(view, url, favicon)
+                jsInterface.abortBlobDownloads()
                 uiHandler.removeCallbacks(homeLongPress)
                 homeConfirmHeld = false
                 view.setBackgroundColor(if (url == Config.HOME_PAGE_URL) Color.TRANSPARENT else Color.WHITE)
@@ -457,7 +458,11 @@ open class WebViewEx(context: Context, val callback: Callback, val jsInterface: 
                 super.onPageFinished(view, url)
                 Log.d(TAG, "onPageFinished url: $url")
                 callback.onPageFinished(url)
-                evaluateJavascript(getGenericJSInjects(), null)
+                applyChinaVideoAdStyles(url, callback.isAdBlockingEnabled())
+                if (!Config.isAppPage(url)) {
+                    val disabled = !AppContext.provideConfig().persistentVideoControlsEnabled(url)
+                    evaluateJavascript("window.tvBroDisablePersistentControls=$disabled;" + getGenericJSInjects(), null)
+                }
                 if (fitPageToScreenOnLoad && url == currentOriginalUrl?.toString()) {
                     fitPageToScreenOnLoad = false
                     view.evaluateJavascript("document.documentElement.clientWidth || window.innerWidth") { cssWidthResult ->
@@ -557,10 +562,15 @@ open class WebViewEx(context: Context, val callback: Callback, val jsInterface: 
         val result = super.restoreState(inState)
         currentOriginalUrl = url?.toUri()
         if (url == Config.HOME_PAGE_URL) {
-            // Reload packaged home content after restoring a tab across app updates.
+            // Legacy sessions can contain cached page content from older app versions.
             loadUrl(Config.HOME_PAGE_URL)
         }
         return result
+    }
+
+    override fun destroy() {
+        jsInterface.abortBlobDownloads()
+        super.destroy()
     }
 
     override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
@@ -706,6 +716,22 @@ open class WebViewEx(context: Context, val callback: Callback, val jsInterface: 
 
     fun onUpdateAdblockSetting(adblockEnabled: Boolean) {
         // Ad blocking is handled in shouldInterceptRequest. Safe Browsing stays enabled.
+        applyChinaVideoAdStyles(url, adblockEnabled)
+    }
+
+    private fun applyChinaVideoAdStyles(pageUrl: String?, enabled: Boolean) {
+        val css = if (enabled) com.phlox.tvwebbrowser.utils.ChinaVideoAdRules.css(pageUrl.orEmpty()) else ""
+        evaluateJavascript("""
+            (function(){
+                var id='tvbro-china-video-ads', old=document.getElementById(id);
+                if(old) old.remove();
+                if(location.href!==${org.json.JSONObject.quote(pageUrl.orEmpty())}) return;
+                var css=${org.json.JSONObject.quote(css)};
+                if(!css) return;
+                var style=document.createElement('style');style.id=id;style.textContent=css;
+                (document.head||document.documentElement).appendChild(style);
+            })();
+        """.trimIndent(), null)
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {

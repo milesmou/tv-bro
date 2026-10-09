@@ -16,8 +16,6 @@ import com.phlox.tvwebbrowser.R
 import kotlinx.coroutines.*
 import org.json.JSONObject
 import java.io.File
-import java.io.InputStream
-import java.io.OutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -34,7 +32,10 @@ class UpdateChecker(val currentVersionCode: Int) {
     }
 
     fun check(urlOfVersionFile: String, channelsToCheck: Array<String>) {
-        val urlConnection = URL(urlOfVersionFile).openConnection() as HttpURLConnection
+        val urlConnection = (URL(urlOfVersionFile).openConnection() as HttpURLConnection).apply {
+            connectTimeout = 15000
+            readTimeout = 10000
+        }
         try {
             val content = urlConnection.inputStream.bufferedReader().use { it.readText() }
             val json = JSONObject(content)
@@ -116,77 +117,52 @@ class UpdateChecker(val currentVersionCode: Int) {
         dialog.isIndeterminate = false
         dialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL)
         dialog.show()
-        var downloaded = false
-        var downloadedFile = Utils.createTempFile(context, UPDATE_APK_FILE_NAME)
-        var nextDialogUpdateTime = System.currentTimeMillis()
-
-        val job = modelScope.launch(Dispatchers.IO) io_launch@{
-            var input: InputStream? = null
-            var output: OutputStream? = null
-            var connection: HttpURLConnection? = null
-            try {
-                val url = URL(update.url)
-                connection = url.openConnection() as HttpURLConnection
-                connection.connect()
-
-                if (connection.responseCode != HttpURLConnection.HTTP_OK) {
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(context, (connection.responseMessage ?: context.getString(R.string.error)) +
-                                " (${connection.responseCode})", Toast.LENGTH_LONG).show()
-                    }
-                    return@io_launch
-                }
-
-                var fileLength = connection.contentLength.toLong()
-                if (fileLength == -1L) {
-                    withContext(Dispatchers.Main) {
-                        dialog.isIndeterminate = true
-                        dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER)
-                    }
-                }
-
-                input = connection.inputStream
-                output = downloadedFile.outputStream()
-                val data = ByteArray(8 * 1024)
-                var total: Long = 0
-                var count: Int
-                do {
-                    if (!isActive) {
-                        return@io_launch
-                    }
-                    count = input!!.read(data)
-                    if (count > 0) {
-                        total += count.toLong()
-                        output.write(data, 0, count)
-                    }
-                    if (fileLength != -1L && System.currentTimeMillis() >= nextDialogUpdateTime) {
-                        withContext(Dispatchers.Main) {
-                            val progress = total * 100 / fileLength
-                            dialog.progress = progress.toInt()
+        val downloadedFile = Utils.createTempFile(context, UPDATE_APK_FILE_NAME)
+        val transfer = UpdateTransfer()
+        var cancelledByUser = false
+        var nextUpdate = 0L
+        try {
+            coroutineScope {
+                val job = async(Dispatchers.IO) {
+                    transfer.download(URL(update.url), downloadedFile) { received, expected ->
+                        val now = android.os.SystemClock.elapsedRealtime()
+                        if (now >= nextUpdate) {
+                            nextUpdate = now + 100
+                            context.runOnUiThread {
+                                if (dialog.isShowing) {
+                                    dialog.isIndeterminate = expected <= 0
+                                    if (expected > 0) dialog.progress = (received * 100 / expected).toInt()
+                                }
+                            }
                         }
-                        nextDialogUpdateTime += 50
                     }
-                } while (count != -1)
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, e.toString(), Toast.LENGTH_LONG).show()
+                    val archive = context.packageManager.getPackageArchiveInfo(downloadedFile.path, 0)
+                    if (archive?.packageName != context.packageName)
+                        throw java.io.IOException("Invalid update package")
                 }
-                return@io_launch
-            } finally {
-                output?.close()
-                input?.close()
-                connection?.disconnect()
+                dialog.setOnCancelListener {
+                    cancelledByUser = true
+                    job.cancel()
+                    modelScope.launch(Dispatchers.IO) { transfer.cancel() }
+                }
+                try {
+                    job.await()
+                } finally {
+                    withContext(NonCancellable + Dispatchers.IO) { transfer.cancel() }
+                }
             }
-
-            downloaded = true
+        } catch (e: CancellationException) {
+            downloadedFile.delete()
+            if (!cancelledByUser) throw e
+            return
+        } catch (e: Exception) {
+            downloadedFile.delete()
+            if (!cancelledByUser) Toast.makeText(context, e.toString(), Toast.LENGTH_LONG).show()
+            return
+        } finally {
+            dialog.dismiss()
         }
-        dialog.setOnCancelListener {
-            job.cancel()
-        }
-        job.join()
-        dialog.dismiss()
-
-        if (!downloaded) return
+        if (cancelledByUser || context.isFinishing || context.isDestroyed) return
 
         val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(downloadedFile.extension)
         val apkURI = FileProvider.getUriForFile(

@@ -50,7 +50,9 @@ class Config(val prefs: SharedPreferences) {
         const val ENGINE_GECKO_VIEW = "GeckoView"
         const val ENGINE_WEB_VIEW = "WebView"
 
-        const val DEFAULT_ADBLOCK_LIST_URL = "https://easylist.to/easylist/easylist.txt"
+        const val DEFAULT_ADBLOCK_LIST_URL = "https://easylist-downloads.adblockplus.org/easylist.txt"
+        const val DEFAULT_CHINA_ADBLOCK_LIST_URL = "https://easylist-downloads.adblockplus.org/easylistchina.txt"
+        private const val LEGACY_DEFAULT_ADBLOCK_LIST_URL = "https://easylist.to/easylist/easylist.txt"
         val SearchEnginesNames = arrayOf("bing", "custom")
         const val DEFAULT_SEARCH_ENGINE_URL = "https://cn.bing.com/search?q=[query]"
         val SearchEnginesURLs = listOf(DEFAULT_SEARCH_ENGINE_URL, "")
@@ -66,6 +68,18 @@ class Config(val prefs: SharedPreferences) {
             // that, at least for now, in terms of performance and stability, it is inferior to WebView.
             return false
         }
+    }
+
+    fun persistentVideoControlsEnabled(url: String?): Boolean {
+        val host = runCatching { java.net.URL(url).host }.getOrNull() ?: return true
+        return !prefs.getStringSet("native_video_controls_hosts", emptySet()).orEmpty().contains(host)
+    }
+
+    fun setPersistentVideoControlsEnabled(url: String, enabled: Boolean) {
+        val host = runCatching { java.net.URL(url).host }.getOrNull() ?: return
+        val hosts = prefs.getStringSet("native_video_controls_hosts", emptySet()).orEmpty().toMutableSet()
+        if (enabled) hosts.remove(host) else hosts.add(host)
+        prefs.edit().putStringSet("native_video_controls_hosts", hosts).apply()
     }
 
     enum class Theme {
@@ -232,12 +246,27 @@ class Config(val prefs: SharedPreferences) {
         }
 
     var adBlockListURL = ObservableStringPreference(DEFAULT_ADBLOCK_LIST_URL, ADBLOCK_LIST_URL_KEY)
+    var chinaAdBlockListURL = ObservableStringPreference(
+        DEFAULT_CHINA_ADBLOCK_LIST_URL, "china_adblock_list_url")
+
+    var chinaAdBlockListLastUpdate: Long
+        get() = prefs.getLong("china_adblock_last_update", 0)
+        set(value) { prefs.edit().putLong("china_adblock_last_update", value).apply() }
 
     var adBlockListLastUpdate: Long
         get() = prefs.getLong(ADBLOCK_LAST_UPDATE_LIST_KEY, 0)
         set(value) {
             prefs.edit().putLong(ADBLOCK_LAST_UPDATE_LIST_KEY, value).apply()
         }
+
+    init {
+        // The previous default was an EasyList official URL that is less reliable from
+        // mainland networks. Migrate only that exact old default; preserve user URLs.
+        if (prefs.getString(ADBLOCK_LIST_URL_KEY, null) == LEGACY_DEFAULT_ADBLOCK_LIST_URL) {
+            adBlockListURL.value = DEFAULT_ADBLOCK_LIST_URL
+            adBlockListLastUpdate = 0
+        }
+    }
 
     var appWebExtensionVersion: Int
         get() = prefs.getInt(APP_WEB_EXTENSION_VERSION_KEY, 0)

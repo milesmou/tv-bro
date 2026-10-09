@@ -218,4 +218,10 @@
     <string name="page_load_failed_message">Check your connection and try again, or return to the home page.</string>
     <string name="page_renderer_failed_message">The page stopped responding. Retry to reopen it, or return to the home page.</string>
     <string name="page_retry">Retry</string>
+    <string name="persistent_video_controls_site">本站视频控制条常显（刷新生效）</string>
+    <string name="china_adblock_subscription">EasyList China（可填镜像地址，失败回退官方源）</string>
+    <string name="easylist_subscription_title">EasyList · General rules</string>
+    <string name="easylist_china_subscription_title">EasyList China · Chinese site rules</string>
+    <string name="adblock_update_subscriptions">Update subscriptions</string>
+    <string name="adblock_updating_subscriptions">Updating subscriptions…</string>
 </resources>

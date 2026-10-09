@@ -34,11 +34,9 @@ class AppHomeContentScriptPortDelegate(val port: WebExtension.Port, val webEngin
                     for (item in callback.getHomePageLinks()) {
                         jsArr.put(item.toJsonObj())
                     }
-                    var links = jsArr.toString()
-                    links = links.replace("'", "\\'")
-                    webEngine.evaluateJavascript("renderLinks('${cfg.homePageLinksMode.name}', $links)")
+                    webEngine.evaluateJavascript("renderLinks(${JSONObject.quote(cfg.homePageLinksMode.name)}, $jsArr)")
                     webEngine.evaluateJavascript(
-                        "applySearchEngine(\"${cfg.guessSearchEngineName()}\", \"${cfg.searchEngineURL.value}\")")
+                        "applySearchEngine(${JSONObject.quote(cfg.guessSearchEngineName())}, ${JSONObject.quote(cfg.searchEngineURL.value)})")
                 }
                 "setSearchEngine" -> {
                     val data = msgJson.getJSONObject("data")

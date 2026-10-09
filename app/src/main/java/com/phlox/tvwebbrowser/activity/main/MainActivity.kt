@@ -91,7 +91,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.InputStream
@@ -424,6 +423,8 @@ open class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         Log.d(TAG, "onDestroy")
+        downloadIntent?.stream?.close()
+        downloadIntent = null
         //here properties can be uninitialized in case of wrong activity for incognito mode
         //detection and force activity restart in onCreate()
         if (::tabsModel.isInitialized) {
@@ -437,9 +438,8 @@ open class MainActivity : AppCompatActivity() {
         super.onNewIntent(intent)
         if (intent.data != null) {
             handleIntent(intent)
-        } else if (intent.action == Intent.ACTION_MAIN && tabStateLoaded) {
-            showStartupHomePage()
         }
+        // A launcher intent only brings the live session back to the foreground.
     }
 
     private fun loadState() = lifecycleScope.launch(Dispatchers.Main) {
@@ -448,8 +448,10 @@ open class MainActivity : AppCompatActivity() {
 
         vb.progressBarGeneric.visibility = View.VISIBLE
         vb.progressBarGeneric.requestFocus()
-        viewModel.loadState().join()
-        tabsModel.loadState().join()
+        val homeDataJob = viewModel.loadState()
+        val tabsJob = tabsModel.loadState()
+        homeDataJob.join()
+        tabsJob.join()
 
         if (!isActive) {
             return@launch
@@ -458,7 +460,9 @@ open class MainActivity : AppCompatActivity() {
         vb.progressBarGeneric.visibility = View.GONE
         tabStateLoaded = true
 
-        if (intent.data == null) {
+        if (tabsModel.currentTab.value != null) {
+            changeTab(tabsModel.currentTab.value!!)
+        } else if (intent.data == null) {
             showStartupHomePage()
         } else {
             handleIntent(intent)
@@ -471,27 +475,12 @@ open class MainActivity : AppCompatActivity() {
     }
 
     private fun showStartupHomePage() {
-        // Resume the retained page without creating an extra home tab.
-        tabsModel.tabsStates.firstOrNull { it.selected }?.let {
-            changeTab(it)
-            navigate(it.url)
-            hideMenuOverlay()
-            return
-        }
-        val homeUrl = settingsModel.homePage
-        val homeTab = tabsModel.tabsStates.firstOrNull {
-            it.url == homeUrl || (homeUrl == Config.HOME_URL_ALIAS &&
-                config.homePageMode == Config.HomePageMode.HOME_PAGE &&
-                it.url == Config.HOME_PAGE_URL)
-        }
-        if (homeTab == null) {
-            openInNewTab(homeUrl, tabsModel.tabsStates.size,
-                needToHideMenuOverlay = true, navigateImmediately = true)
-        } else {
-            changeTab(homeTab)
-            navigate(homeUrl)
-            hideMenuOverlay()
-        }
+        val previousTabs = tabsModel.tabsStates.toList()
+        // Open first so a WebView creation failure does not discard the current session.
+        openInNewTab(settingsModel.homePage, 0,
+            needToHideMenuOverlay = true, navigateImmediately = true) ?: return
+        previousTabs.forEach { tabsModel.onCloseTab(it) }
+        hideMenuOverlay()
     }
 
     private fun handleIntent(intent: Intent) {
@@ -614,6 +603,7 @@ open class MainActivity : AppCompatActivity() {
     private fun onDownloadRequested(url: String, referer: String, originalDownloadFileName: String, userAgent: String?, mimeType: String? = null,
                                     operationAfterDownload: Download.OperationAfterDownload = Download.OperationAfterDownload.NOP,
                                     base64BlobData: String? = null, stream: InputStream?, size: Long = 0L) {
+        downloadIntent?.stream?.close()
         downloadIntent = Download(url, originalDownloadFileName, null, operationAfterDownload,
             mimeType, referer, userAgent, base64BlobData, stream, size)
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q &&
@@ -635,8 +625,9 @@ open class MainActivity : AppCompatActivity() {
 
     private fun startDownload() {
         val download = this.downloadIntent ?: return
+        val service = downloadService ?: return
         this.downloadIntent = null
-        downloadService?.startDownload(download)
+        service.startDownload(download)
         onDownloadStarted(download.filename)
     }
 
@@ -652,6 +643,14 @@ open class MainActivity : AppCompatActivity() {
     override fun onRequestPermissionsResult(requestCode: Int,
                                             permissions: Array<String>, grantResults: IntArray) {
         if (tabsModel.currentTab.value?.webEngine?.onPermissionsResult(requestCode, permissions, grantResults) == true) return
+        if (requestCode == MY_PERMISSIONS_REQUEST_EXTERNAL_STORAGE_ACCESS ||
+            requestCode == MY_PERMISSIONS_REQUEST_POST_NOTIFICATIONS_ACCESS) {
+            if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+                downloadIntent?.stream?.close()
+                downloadIntent = null
+                return
+            }
+        }
         if (grantResults.isEmpty()) return
         when (requestCode) {
             MY_PERMISSIONS_REQUEST_EXTERNAL_STORAGE_ACCESS -> {
@@ -1085,7 +1084,8 @@ open class MainActivity : AppCompatActivity() {
                                          originalDownloadFileName: String?, userAgent: String?, mimeType: String?,
                                          operationAfterDownload: Download.OperationAfterDownload, base64BlobData: String?,
                                          stream: InputStream?, size: Long, contentDisposition: String?) {
-            val fileName = DownloadUtils.guessFileName(url, contentDisposition, mimeType)
+            val fileName = originalDownloadFileName?.takeIf { it.isNotBlank() }?.let { File(it).name }
+                ?: DownloadUtils.guessFileName(url, contentDisposition, mimeType)
 
             this@MainActivity.onDownloadRequested(url, referer, fileName,
                 userAgent, mimeType, operationAfterDownload, base64BlobData, stream, size)
@@ -1245,10 +1245,7 @@ open class MainActivity : AppCompatActivity() {
         }
 
         override fun isAdBlockingEnabled(): Boolean {
-            tabsModel.currentTab.value?.adblock?.apply {
-                return this
-            }
-            return  config.adBlockEnabled
+            return tab.adblock ?: config.adBlockEnabled
         }
 
         override fun isDialogsBlockingEnabled(): Boolean {
@@ -1257,8 +1254,7 @@ open class MainActivity : AppCompatActivity() {
         }
 
         override fun shouldBlockNewWindow(dialog: Boolean, userGesture: Boolean): Boolean {
-            val hostConfig = runBlocking(Dispatchers.Main.immediate){ tabsModel.findHostConfig(tab, false) }
-            val currentBlockPopupsLevelValue = hostConfig?.popupBlockLevel ?: HostConfig.DEFAULT_BLOCK_POPUPS_VALUE
+            val currentBlockPopupsLevelValue = tabsModel.popupBlockingLevel(tab.url)
             return when (currentBlockPopupsLevelValue) {
                 HostConfig.POPUP_BLOCK_NONE -> false
                 HostConfig.POPUP_BLOCK_DIALOGS -> dialog
@@ -1472,8 +1468,16 @@ open class MainActivity : AppCompatActivity() {
                 it.menu.findItem(R.id.miDownload).isVisible = isHTTPUrl
                 it.menu.findItem(R.id.miCopyToClipboard).isVisible = url != null
                 it.menu.findItem(R.id.miShare).isVisible = url != null
+                it.menu.findItem(R.id.miPersistentVideoControls).apply {
+                    isVisible = !config.isWebEngineGecko() && !Config.isAppPage(tab.url) && URLUtil.isNetworkUrl(tab.url)
+                    isChecked = config.persistentVideoControlsEnabled(tab.url)
+                }
                 it.setOnMenuItemClickListener { menuItem ->
                     when (menuItem.itemId) {
+                        R.id.miPersistentVideoControls -> {
+                            config.setPersistentVideoControlsEnabled(tab.url, !menuItem.isChecked)
+                            tab.webEngine.reload()
+                        }
                         R.id.miRefreshPage -> tab.webEngine.reload()
                         R.id.miOpenInNewTab -> onOpenInNewTabRequested(url!!, true)
                         R.id.miOpenInExternalApp -> onOpenInExternalAppRequested(url!!)
@@ -1533,6 +1537,11 @@ open class MainActivity : AppCompatActivity() {
                 return
             }
             downloadService = binder.service
+            val storageAllowed = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ||
+                checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+            val notificationsAllowed = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+            if (storageAllowed && notificationsAllowed) startDownload()
         }
 
         override fun onServiceDisconnected(p0: ComponentName?) {

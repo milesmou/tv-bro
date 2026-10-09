@@ -187,12 +187,14 @@ class DownloadService : Service() {
             download.filename = fileName
 
             if (Environment.MEDIA_MOUNTED != Environment.getExternalStorageState()) {
+                download.stream?.close()
                 Toast.makeText(this, R.string.storage_not_mounted, Toast.LENGTH_SHORT).show()
                 return
             }
             val downloadsDir =
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
             if (!downloadsDir.exists() && !downloadsDir.mkdirs()) {
+                download.stream?.close()
                 Toast.makeText(this, R.string.can_not_create_downloads, Toast.LENGTH_SHORT)
                     .show()
                 return

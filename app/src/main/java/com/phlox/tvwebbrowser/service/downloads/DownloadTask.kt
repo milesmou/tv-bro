@@ -89,6 +89,8 @@ class StreamDownloadTask(override var downloadInfo: Download, val stream: InputS
 
 private fun copyDownload(input: InputStream, output: OutputStream, task: DownloadTask,
     callback: DownloadTask.Callback, reportProgress: Boolean = true) {
+    if (input is com.phlox.tvwebbrowser.utils.ChunkedBlobInputStream)
+        input.cancelled = { task.downloadInfo.cancelled }
     val buffer = ByteArray(64 * 1024)
     var total = 0L
     while (true) {

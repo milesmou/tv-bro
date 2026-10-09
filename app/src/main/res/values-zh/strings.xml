@@ -216,4 +216,8 @@
     <string name="page_load_failed_message">请检查网络后重试，或返回主页。</string>
     <string name="page_renderer_failed_message">网页进程已退出，请重试打开网页，或返回主页。</string>
     <string name="page_retry">重试</string>
+    <string name="easylist_subscription_title">EasyList · 通用规则</string>
+    <string name="easylist_china_subscription_title">EasyList China · 国内网站规则</string>
+    <string name="adblock_update_subscriptions">更新订阅</string>
+    <string name="adblock_updating_subscriptions">正在更新订阅…</string>
 </resources>

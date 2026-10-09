@@ -1,0 +1,14 @@
+Domestic video advertising rule data
+
+Source: EasyList China, The EasyList authors (https://easylist.to/)
+https://github.com/easylist/easylistchina/blob/master/easylistchina.txt
+Retrieved: 2026-10-09
+Source license declaration: https://easylist.to/pages/licence.html
+Rule data is distributed under Creative Commons Attribution-ShareAlike 3.0
+Unported: https://creativecommons.org/licenses/by-sa/3.0/
+
+Changes: selected a small subset of network paths and ordinary CSS selectors;
+restricted network rules to the relevant video platform; omitted player ad
+mixers, rewrite/scriptlet rules, generic selectors, paywalls and media CDN rules.
+Rule data appears in utils/ChinaVideoAdRules.kt. This notice applies to that
+adapted rule data, not unrelated application code.

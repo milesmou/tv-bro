@@ -33,6 +33,15 @@ const expression = `(() => {
    const edit=document.activeElement.querySelector('.site-edit');
    check(!!edit,'Edit action exists');
    focusHomeControl(edit); check(document.activeElement===edit,'Edit control can receive remote focus');
+   renderLinks('BOOKMARKS',[{order:0,title:"引号 ' \\\" 与反斜杠 \\\\ 的长标题",url:'https://v.qq.com/',favoriteId:9999}]);
+   focusHomeControl(document.querySelector('.site'));
+   renderLinks('BOOKMARKS',[]);
+   check(document.activeElement.classList.contains('empty'),'Deleting the final bookmark focuses Add');
+   document.activeElement.blur(); window.tvBroRestoreHomeFocus();
+   check(document.activeElement.id==='search-input','Lost focus restores to search');
+   focusHomeControl(document.querySelector('.site'));
+   window.tvBroRestoreHomeFocus();
+   check(document.activeElement.classList.contains('site'),'Returning from dialog preserves valid card focus');
    return {viewport:[innerWidth,innerHeight],devicePixelRatio,columns,checks:results.length,results};
  } finally {
    renderLinks(savedMode,savedLinks);

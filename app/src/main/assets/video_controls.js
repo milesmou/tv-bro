@@ -1,6 +1,6 @@
 // Keep website playback controls reachable while using a TV remote.
 (function () {
-    if (window.tvBroPersistentVideoControls) return;
+    if (window.tvBroDisablePersistentControls || window.tvBroPersistentVideoControls) return;
     window.tvBroPersistentVideoControls = true;
 
     var selectors = [
@@ -47,17 +47,23 @@
         }
 
         function pin(root) {
-            function refresh() {
-                root.querySelectorAll(selectors).forEach(keepVisible);
-            }
-            refresh();
             if (roots.has(root)) return;
             roots.add(root);
-            // Restore controls when the website's idle timer hides them again.
-            new MutationObserver(refresh).observe(root, {
-                subtree: true, childList: true, attributes: true,
-                attributeFilter: ['class', 'style', 'hidden']
+            var timer = null;
+            var options = {subtree:true, childList:true, attributes:true,
+                attributeFilter:['class', 'style', 'hidden']};
+            var observer = new MutationObserver(function() {
+                if (timer === null) timer = view.setTimeout(refresh, 100);
             });
+            function refresh() {
+                timer = null;
+                observer.disconnect();
+                if (!root.isConnected) { roots.delete(root); return; }
+                // Ignore our own style changes, and batch the player's changes.
+                root.querySelectorAll(selectors).forEach(keepVisible);
+                observer.observe(root, options);
+            }
+            refresh();
         }
 
         function scan() {

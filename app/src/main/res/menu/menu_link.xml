@@ -19,4 +19,7 @@
     <item
         android:id="@+id/miShare"
         android:title="@string/share_url" />
+    <item android:id="@+id/miPersistentVideoControls"
+        android:checkable="true"
+        android:title="@string/persistent_video_controls_site" />
 </menu>

@@ -35,7 +35,7 @@ class VersionSettingsView @JvmOverloads constructor(
                 ?: WebEngineFactory.getWebEngineVersionString()
         } else WebEngineFactory.getWebEngineVersionString()
         vb.tvWebViewVersion.text = context.getString(R.string.engine_version_s, "$engine · $engineVersion")
-        vb.tvLink.setOnClickListener { loadUrl("https://github.com/truefedex/tv-bro") }
+        vb.tvLink.setOnClickListener { loadUrl("https://github.com/milesmou/tv-bro") }
         vb.tvLicense.setOnClickListener {
             loadUrl("https://raw.githubusercontent.com/truefedex/tv-bro/refs/heads/master/LICENSE.md")
         }

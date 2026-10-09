@@ -9,9 +9,55 @@ import com.phlox.tvwebbrowser.TVBro
 import com.phlox.tvwebbrowser.model.Download
 import com.phlox.tvwebbrowser.utils.DownloadUtils
 import org.json.JSONArray
+import org.json.JSONObject
 
 
 class AndroidJSInterface(private val webEngine: WebViewWebEngine) {
+    private val blobTransfers = java.util.concurrent.ConcurrentHashMap<String, com.phlox.tvwebbrowser.utils.ChunkedBlobInputStream>()
+
+    @JavascriptInterface
+    fun beginBlobDownload(fileName: String?, url: String, mimetype: String, size: Long): String {
+        val callback = webEngine.callback ?: return ""
+        if (size < 0 || !url.startsWith("blob:") || blobTransfers.size >= 2) return ""
+        val token = java.util.UUID.randomUUID().toString()
+        val stream = com.phlox.tvwebbrowser.utils.ChunkedBlobInputStream(size) { blobTransfers.remove(token) }
+        blobTransfers[token] = stream
+        callback.getActivity().runOnUiThread {
+            if (webEngine.callback !== callback || stream.isAborted()) {
+                stream.close()
+                return@runOnUiThread
+            }
+            callback.onDownloadRequested(url, "", fileName?.takeIf { it.isNotBlank() }
+                ?: DownloadUtils.guessFileName(url, null, mimetype), "", mimetype,
+                Download.OperationAfterDownload.NOP, null, stream, size)
+        }
+        return token
+    }
+
+    @JavascriptInterface
+    fun appendBlobChunk(token: String, data: String): Int {
+        val stream = blobTransfers[token] ?: return -1
+        return try {
+            if (data.length > 87384) throw java.io.IOException("Blob chunk too large")
+            if (stream.offer(android.util.Base64.decode(data, android.util.Base64.DEFAULT))) 1 else 0
+        } catch (e: Exception) {
+            stream.abort()
+            blobTransfers.remove(token)
+            -1
+        }
+    }
+
+    @JavascriptInterface
+    fun finishBlobDownload(token: String) { blobTransfers.remove(token)?.finish() }
+
+    @JavascriptInterface
+    fun abortBlobDownload(token: String) { blobTransfers.remove(token)?.abort() }
+
+    fun abortBlobDownloads() {
+        blobTransfers.values.forEach { it.abort() }
+        blobTransfers.clear()
+    }
+
     @JavascriptInterface
     fun currentUrl(): String {
         if (!webEngine.tab.url.startsWith(WebViewEx.INTERNAL_SCHEME)) return ""
@@ -77,11 +123,9 @@ class AndroidJSInterface(private val webEngine: WebViewWebEngine) {
             for (item in callback.getHomePageLinks()) {
                 jsArr.put(item.toJsonObj())
             }
-            var links = jsArr.toString()
-            links = links.replace("'", "\\'")
-            webEngine.evaluateJavascript("renderLinks('${cfg.homePageLinksMode.name}', $links)")
+            webEngine.evaluateJavascript("renderLinks(${JSONObject.quote(cfg.homePageLinksMode.name)}, $jsArr)")
             webEngine.evaluateJavascript(
-                "applySearchEngine(\"${cfg.guessSearchEngineName()}\", \"${cfg.searchEngineURL.value}\")")
+                "applySearchEngine(${JSONObject.quote(cfg.guessSearchEngineName())}, ${JSONObject.quote(cfg.searchEngineURL.value)})")
         }
     }
 
@@ -99,15 +143,6 @@ class AndroidJSInterface(private val webEngine: WebViewWebEngine) {
                 else -> "unknown"
             }
         }
-    }
-
-    @JavascriptInterface
-    fun takeBlobDownloadData(base64BlobData: String, fileName: String?, url: String, mimetype: String) {
-        val callback = webEngine.callback ?: return
-        val finalFileName = fileName ?: DownloadUtils.guessFileName(url, null, mimetype)
-        callback.onDownloadRequested(url, "",
-                finalFileName, TVBro.instance.getString(R.string.app_name_short),
-            mimetype, Download.OperationAfterDownload.NOP, base64BlobData)
     }
 
     @JavascriptInterface

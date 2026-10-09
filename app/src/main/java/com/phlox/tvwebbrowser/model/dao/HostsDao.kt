@@ -5,6 +5,9 @@ import com.phlox.tvwebbrowser.model.HostConfig
 
 @Dao
 interface HostsDao {
+    @Query("SELECT * FROM hosts WHERE popup_block_level IS NOT NULL")
+    suspend fun popupOverrides(): List<HostConfig>
+
     @Query("SELECT * FROM hosts WHERE host_name = :name")
     fun findByHostName(name: String): HostConfig?
 

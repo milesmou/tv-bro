@@ -216,4 +216,8 @@
     <string name="page_load_failed_message">請檢查網路後重試，或返回首頁。</string>
     <string name="page_renderer_failed_message">網頁程序已退出，請重試開啟網頁，或返回首頁。</string>
     <string name="page_retry">重試</string>
+    <string name="easylist_subscription_title">EasyList · 通用規則</string>
+    <string name="easylist_china_subscription_title">EasyList China · 中文網站規則</string>
+    <string name="adblock_update_subscriptions">更新訂閱</string>
+    <string name="adblock_updating_subscriptions">正在更新訂閱…</string>
 </resources>
